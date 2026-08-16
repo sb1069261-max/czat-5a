@@ -7,39 +7,122 @@
   <style>
     * {
       box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 15px;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
       height: 100vh;
+      background: #0f0f10;
+      color: #fff;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #0f0f10 url('https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?auto=format&fit=crop&w=1000&q=80') center/cover no-repeat fixed;
-      color: #fff;
     }
+
+    /* EKRAN WEJŚCIOWY (BURGERY) */
+    #welcome-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), 
+                  url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+      transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+    }
+
+    /* DYNAMICZNY PRZYCISK "TYLKO TORTY" */
+    .cake-btn {
+      padding: 22px 45px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ff007f, #7928ca);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 0, 127, 0.6), 0 0 50px rgba(121, 40, 202, 0.4);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cake-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 35px rgba(255, 0, 127, 0.9), 0 0 70px rgba(121, 40, 202, 0.7);
+    }
+
+    .cake-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* EKRAN ANIMACJI ŁADOWANIA (EFFECT) */
+    #transition-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle, rgba(0, 210, 255, 0.4) 0%, rgba(15, 15, 16, 1) 80%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.4s ease;
+    }
+
+    .spinner {
+      width: 70px;
+      height: 70px;
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #ff007f;
+      border-bottom-color: #00d2ff;
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* EKRAN CZATU */
     #chat-container {
       width: 100%;
       max-width: 450px;
       height: 92vh;
-      background: rgba(18, 18, 20, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(18, 18, 20, 0.88);
+      backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 20px;
       display: flex;
       flex-direction: column;
       padding: 15px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.6s ease, transform 0.6s ease;
     }
+
+    body.chat-active #chat-container {
+      opacity: 1;
+      transform: scale(1);
+    }
+
     .header {
       text-align: center;
       padding-bottom: 10px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       margin-bottom: 10px;
     }
+
     .header h1 {
-      margin: 0;
       font-size: 28px;
       letter-spacing: 2px;
       background: linear-gradient(45deg, #ff007f, #00d2ff);
@@ -47,6 +130,7 @@
       -webkit-text-fill-color: transparent;
       font-weight: 900;
     }
+
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -56,13 +140,7 @@
       padding-right: 5px;
       margin-bottom: 10px;
     }
-    #messages::-webkit-scrollbar {
-      width: 5px;
-    }
-    #messages::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-    }
+
     .msg {
       max-width: 80%;
       padding: 10px 14px;
@@ -74,16 +152,19 @@
       align-self: flex-start;
       border-bottom-left-radius: 2px;
     }
+
     .my-msg {
       background: linear-gradient(135deg, #007bff, #0056b3);
       align-self: flex-end;
       border-bottom-left-radius: 15px;
       border-bottom-right-radius: 2px;
     }
+
     form {
       display: flex;
       gap: 8px;
     }
+
     input {
       flex: 1;
       padding: 12px 15px;
@@ -94,10 +175,8 @@
       font-size: 15px;
       outline: none;
     }
-    input:focus {
-      border-color: #007bff;
-    }
-    button {
+
+    button.send-btn {
       padding: 12px 20px;
       border: none;
       border-radius: 12px;
@@ -110,6 +189,18 @@
   </style>
 </head>
 <body>
+
+  <!-- EKRAN WEJŚCIOWY -->
+  <div id="welcome-screen">
+    <button class="cake-btn" onclick="enterChat()">TYLKO TORTY</button>
+  </div>
+
+  <!-- NAKŁADKA ANIMACJI PRZEJŚCIA -->
+  <div id="transition-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- APLIKACJA CZATU -->
   <div id="chat-container">
     <div class="header">
       <h1>CZAT 5A</h1>
@@ -117,12 +208,32 @@
     <div id="messages"></div>
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Napisz wiadomość..." />
-      <button type="submit">Wyślij</button>
+      <button type="submit" class="send-btn">Wyślij</button>
     </form>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // LOGIKA ANIMACJI WEJŚCIA
+    function enterChat() {
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const overlay = document.getElementById('transition-overlay');
+
+      welcomeScreen.style.opacity = '0';
+      welcomeScreen.style.transform = 'scale(1.2)';
+
+      setTimeout(() => {
+        welcomeScreen.style.display = 'none';
+        overlay.style.opacity = '1';
+      }, 500);
+
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        document.body.classList.add('chat-active');
+      }, 1200);
+    }
+
+    // LOGIKA SOCKET.IO I CZATU
     const socket = io();
     const form = document.getElementById('form');
     const input = document.getElementById('input');
