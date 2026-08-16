@@ -26,7 +26,6 @@
       align-items: center;
     }
 
-    /* EKRAN WEJŚCIOWY */
     #welcome-screen {
       position: fixed;
       inset: 0;
@@ -58,7 +57,6 @@
       transform: scale(0.95);
     }
 
-    /* NAKŁADKA ANIMACJI PRZEJŚCIA */
     #transition-overlay {
       position: fixed;
       inset: 0;
@@ -87,7 +85,6 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* KONTENER CZATU FLEXBOX DOPASOWANY DO EKRANU */
     #chat-container {
       width: 100%;
       max-width: 500px;
@@ -122,6 +119,14 @@
       font-weight: 900;
     }
 
+    .status-e2ee {
+      font-size: 11px;
+      color: #28a745;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -151,7 +156,6 @@
       border-bottom-right-radius: 4px;
     }
 
-    /* FORMULARZ ZAWSZE WIDOCZNY NA DOLE */
     form {
       display: flex;
       gap: 8px;
@@ -168,7 +172,7 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       background: rgba(0, 0, 0, 0.6);
       color: #fff;
-      font-size: 16px; /* 16px zapobiega automatycznemu przybliżaniu ekranu w Safari */
+      font-size: 16px;
       outline: none;
     }
 
@@ -186,20 +190,18 @@
 </head>
 <body>
 
-  <!-- EKRAN WEJŚCIOWY -->
   <div id="welcome-screen">
     <button class="cake-btn" onclick="enterChat()">TYLKO TORTY</button>
   </div>
 
-  <!-- NAKŁADKA ANIMACJI PRZEJŚCIA -->
   <div id="transition-overlay">
     <div class="spinner"></div>
   </div>
 
-  <!-- APLIKACJA CZATU -->
   <div id="chat-container">
     <div class="header">
       <h1>CZAT 5A</h1>
+      <div class="status-e2ee">🔒 Szyfrowanie E2EE Aktywne</div>
     </div>
     <div id="messages"></div>
     <form id="form">
@@ -228,30 +230,107 @@
       }, 900);
     }
 
+    // SILNIK SZYFROWANIA E2EE (WEB CRYPTO API)
+    let cryptoKey = null;
+
+    if (!window.location.hash) {
+      window.location.hash = 'room-' + Math.random().toString(36).substring(2, 11);
+    }
+    const secretRoomKey = window.location.hash.replace('#', '');
+
+    async function initCrypto() {
+      const enc = new TextEncoder();
+      const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(secretRoomKey),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+
+      cryptoKey = await window.crypto.subtle.deriveKey(
+        {
+          "name": "PBKDF2",
+          salt: enc.encode("czat-5a-static-salt"),
+          "iterations": 100000,
+          "hash": "SHA-256"
+        },
+        keyMaterial,
+        { "name": "AES-GCM", "length": 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptText(text) {
+      const enc = new TextEncoder();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        cryptoKey,
+        enc.encode(text)
+      );
+      
+      return {
+        cipher: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+        iv: btoa(String.fromCharCode(...iv))
+      };
+    }
+
+    async function decryptText(encryptedData) {
+      try {
+        const dec = new TextDecoder();
+        const cipher = Uint8Array.from(atob(encryptedData.cipher), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(encryptedData.iv), c => c.charCodeAt(0));
+        
+        const decrypted = await window.crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: iv },
+          cryptoKey,
+          cipher
+        );
+        return dec.decode(decrypted);
+      } catch (e) {
+        return "⚠️ Błąd odszyfrowania wiadomości";
+      }
+    }
+
+    // SOCKET.IO & LOGIKA CZATU
     const socket = io();
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    if (!window.location.hash) {
-      window.location.hash = 'room-' + Math.random().toString(36).substring(2, 9);
-    }
-    const roomId = window.location.hash;
+    initCrypto().then(() => {
+      // Łączymy z pokojem po zainicjowaniu szyfrowania
+      // Do serwera wysyłamy tylko skrót SHA-256, by nie znał nawet nazwy pokoju
+      window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretRoomKey)).then(hash => {
+        const roomIdHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        socket.emit('join-room', roomIdHash);
 
-    socket.emit('join-room', roomId);
+        socket.on('load-history', async (history) => {
+          messages.innerHTML = '';
+          for (let msg of history) {
+            const decrypted = await decryptText(msg.encrypted);
+            addMessage(decrypted, false);
+          }
+        });
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value.trim()) {
-        const text = input.value;
-        addMessage(text, true);
-        socket.emit('chat-message', { room: roomId, text: text });
-        input.value = '';
-      }
-    });
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (input.value.trim() && cryptoKey) {
+            const text = input.value;
+            addMessage(text, true);
+            const encryptedData = await encryptText(text);
+            socket.emit('chat-message', { room: roomIdHash, encrypted: encryptedData });
+            input.value = '';
+          }
+        });
 
-    socket.on('chat-message', (data) => {
-      addMessage(data.text, false);
+        socket.on('chat-message', async (data) => {
+          const decrypted = await decryptText(data.encrypted);
+          addMessage(decrypted, false);
+        });
+      });
     });
 
     function addMessage(text, isMine) {
