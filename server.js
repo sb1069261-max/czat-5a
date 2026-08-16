@@ -1,57 +1,32 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Pamięć na wiadomości w pokojach
-const roomsHistory = {};
-
-const MESSAGE_TTL = 60 * 60 * 1000; // 1 godzina w milisekundach
+app.use(express.static('public'));
 
 io.on('connection', (socket) => {
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-
-    // Czyścimy wygasłe wiadomości przed wysłaniem historii
-    const now = Date.now();
-    if (roomsHistory[roomId]) {
-      roomsHistory[roomId] = roomsHistory[roomId].filter(msg => (now - msg.timestamp) < MESSAGE_TTL);
-      
-      // Wysyłamy historię wiadomości nowo połączonemu użytkownikowi
-      socket.emit('load-history', roomsHistory[roomId]);
-    } else {
-      roomsHistory[roomId] = [];
-    }
+  // Klient dołącza do konkretnego pokoju (np. na podstawie hasha lub ogólnego pokoju)
+  socket.on('join-room', (room) => {
+    socket.join(room);
   });
 
-  socket.on('chat-message', (data) => {
-    const msgData = {
-      text: data.text,
-      timestamp: Date.now(),
-      id: Math.random().toString(36).substring(2, 9)
-    };
-
-    if (!roomsHistory[data.room]) {
-      roomsHistory[data.room] = [];
+  // Odbieranie i rozsyłanie wiadomości zero-knowledge (serwer widzi tylko zaszyfrowane paczki)
+  socket.on('message', (data) => {
+    // Jeśli używasz pokoi, rozsyłaj do pokoju, w przeciwnym razie broadcast do wszystkich
+    if (data.room) {
+      io.to(data.room).emit('message', data);
+    } else {
+      io.broadcast.emit('message', data); // Wysyłamy do innych
+      socket.emit('message', data);       // Oraz z powrotem do nadawcy, żeby pojawiła się na ekranie!
     }
-    roomsHistory[data.room].push(msgData);
-
-    // Przekazujemy wiadomość do reszty osób w pokoju
-    socket.to(data.room).emit('chat-message', msgData);
-
-    // Automatyczne usuwanie tej wiadomości z pamięci serwera po 1 godzinie
-    setTimeout(() => {
-      if (roomsHistory[data.room]) {
-        roomsHistory[data.room] = roomsHistory[data.room].filter(m => m.id !== msgData.id);
-      }
-    }, MESSAGE_TTL);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Serwer działa na porcie ${PORT}`);
 });
