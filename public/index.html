@@ -124,7 +124,6 @@
     <div class="food-item" style="left: 85%; animation-duration: 18s; animation-delay: 1s;">🍰</div>
   </div>
 
-  <!-- Start Screen -->
   <div id="start-screen" class="screen">
     <div class="start-card">
       <div class="start-quote">„Każdy chuj ma swój strój”</div>
@@ -132,7 +131,6 @@
     </div>
   </div>
 
-  <!-- Nick Modal -->
   <div id="nick-modal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Podaj inicjał/podpis</h3>
@@ -141,7 +139,6 @@
     </div>
   </div>
 
-  <!-- Chat Screen -->
   <div id="chat-screen" class="screen hidden">
     <header>
       <div class="header-title">CZAT 5A</div>
@@ -159,6 +156,42 @@
     const socket = io();
     let cryptoKey = null;
     let currentRoom = window.location.hash.substring(1);
+    let audioCtx = null;
+
+    // Inicjalizacja dźwięku (wymaga interakcji użytkownika, np. kliknięcia w przycisk startowy)
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Funkcja generująca przyjemny dźwięk powiadomienia (typ "ping")
+    function playNotificationSound() {
+      try {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nuta D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // Skok do A5
+        
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch (e) {
+        console.error("Błąd odtwarzania dźwięku", e);
+      }
+    }
 
     const startScreen = document.getElementById('start-screen');
     const nickModal = document.getElementById('nick-modal');
@@ -180,6 +213,7 @@
         window.location.hash = hash;
         currentRoom = hash;
       }
+      
       socket.emit('join-room', currentRoom);
 
       const enc = new TextEncoder();
@@ -198,6 +232,7 @@
     }
 
     enterBtn.addEventListener('click', () => {
+      initAudio(); // Odblokowujemy dźwięk w przeglądarce przy pierwszym kliknięciu
       const savedNick = localStorage.getItem('chat_nick');
       if (savedNick) {
         openChat(savedNick);
@@ -260,9 +295,16 @@
           new Uint8Array(packet.data)
         );
         const parsed = JSON.parse(new TextDecoder().decode(decrypted));
+        
+        // Sprawdzamy czy wiadomość nie jest od nas – jeśli napisał ktoś inny, gramy dźwięk!
+        const myNick = localStorage.getItem('chat_nick');
+        if (parsed.a !== myNick) {
+          playNotificationSound();
+        }
+
         displayMessage(parsed.a, parsed.t);
       } catch (e) {
-        console.error("Błąd odszyfrowania", e);
+        // Ignorujemy obce pokoje
       }
     });
 
