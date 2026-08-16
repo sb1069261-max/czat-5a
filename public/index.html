@@ -2,349 +2,159 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Czat 5a</title>
-  
-  <!-- USTAWIENIA APLIKACJI MOBILNEJ (PWA) -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Czat 5A">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0f0f10">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prywatny Czat</title>
+  <link rel="manifest" href="/manifest.json">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; transition: all 0.3s ease; }
+    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; justify-content: center; align-items: center; }
 
-    html, body {
-      height: 100dvh;
-      width: 100vw;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f0f10;
-      color: #fff;
-    }
+    /* EKRAN 1: Główny przycisk startowy */
+    #startScreen { text-align: center; }
+    .cake-btn { background: #00ff88; color: #000; border: none; padding: 18px 32px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.2); }
 
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    /* EKRAN 2: Podaj pierwszą literę imienia */
+    #nickScreen { display: none; text-align: center; max-width: 320px; width: 100%; }
+    #nickScreen p { font-size: 16px; color: #ccc; margin-bottom: 15px; }
+    #nickInput { background: #222; border: 1px solid #00ff88; color: #fff; padding: 12px; border-radius: 8px; font-size: 18px; text-align: center; width: 100%; margin-bottom: 12px; outline: none; }
+    .enter-btn { background: #00ff88; color: #000; border: none; padding: 12px; font-weight: bold; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; }
 
-    #welcome-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), 
-                  url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-
-    .cake-btn {
-      padding: 20px 40px;
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      color: #fff;
-      text-transform: uppercase;
-      background: linear-gradient(135deg, #ff007f, #7928ca);
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
-      transition: transform 0.2s ease;
-    }
-
-    .cake-btn:active {
-      transform: scale(0.95);
-    }
-
-    #transition-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 90;
-      pointer-events: none;
-      opacity: 0;
-      background: radial-gradient(circle, rgba(0, 210, 255, 0.3) 0%, rgba(15, 15, 16, 1) 80%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: opacity 0.3s ease;
-    }
-
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #ff007f;
-      border-bottom-color: #00d2ff;
-      border-radius: 50%;
-      animation: spin 0.8s infinite linear;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    #chat-container {
-      width: 100%;
-      max-width: 500px;
-      height: 100dvh;
-      background: rgba(18, 18, 20, 0.95);
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      opacity: 0;
-      transform: scale(0.98);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-
-    body.chat-active #chat-container {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .header {
-      text-align: center;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      flex-shrink: 0;
-    }
-
-    .header h1 {
-      font-size: 22px;
-      letter-spacing: 2px;
-      background: linear-gradient(45deg, #ff007f, #00d2ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: 900;
-    }
-
-    .status-e2ee {
-      font-size: 11px;
-      color: #28a745;
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px 0;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .msg {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 15px;
-      line-height: 1.4;
-      word-break: break-word;
-      background: rgba(255, 255, 255, 0.1);
-      align-self: flex-start;
-      border-bottom-left-radius: 4px;
-    }
-
-    .my-msg {
-      background: linear-gradient(135deg, #007bff, #0056b3);
-      align-self: flex-end;
-      border-bottom-left-radius: 16px;
-      border-bottom-right-radius: 4px;
-    }
-
-    form {
-      display: flex;
-      gap: 8px;
-      padding-top: 8px;
-      padding-bottom: env(safe-area-inset-bottom, 8px);
-      flex-shrink: 0;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    input {
-      flex: 1;
-      padding: 12px 15px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      font-size: 16px;
-      outline: none;
-    }
-
-    button.send-btn {
-      padding: 12px 18px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #28a745, #218838);
-      color: #fff;
-      font-weight: bold;
-      font-size: 15px;
-      cursor: pointer;
-    }
+    /* EKRAN 3: Główny Czat */
+    #chatScreen { display: none; flex-direction: column; width: 100%; height: 100%; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #333; margin-bottom: 10px; font-size: 14px; color: #aaa; }
+    #chat { flex: 1; overflow-y: auto; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #181818; }
+    .msg { margin-bottom: 8px; word-break: break-word; }
+    .nick { color: #00ff88; font-weight: bold; }
+    .inputs { display: flex; gap: 8px; }
+    #msgInput { flex: 1; background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 6px; font-size: 16px; outline: none; }
+    .send-btn { background: #00ff88; color: #000; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div id="welcome-screen">
-    <button class="cake-btn" onclick="enterChat()">TYLKO TORTY</button>
+  <!-- EKRAN 1 -->
+  <div id="startScreen">
+    <button class="cake-btn" onclick="goToNickStep()">TYLKO TORTY</button>
   </div>
 
-  <div id="transition-overlay">
-    <div class="spinner"></div>
+  <!-- EKRAN 2 -->
+  <div id="nickScreen">
+    <p>Podaj pierwszą literę imienia lub podpis:</p>
+    <input type="text" id="nickInput" placeholder="np. P" maxlength="10">
+    <button class="enter-btn" onclick="enterChat()">Wejdź do czatu</button>
   </div>
 
-  <div id="chat-container">
+  <!-- EKRAN 3 -->
+  <div id="chatScreen">
     <div class="header">
-      <h1>CZAT 5A</h1>
-      <div class="status-e2ee">🔒 Szyfrowanie E2EE Aktywne</div>
+      <span>🔒 Zaszyfrowany Czat</span>
+      <span>Podpis: <b id="userNickDisplay" style="color:#00ff88;">-</b></span>
     </div>
-    <div id="messages"></div>
-    <form id="form">
-      <input id="input" autocomplete="off" placeholder="Napisz wiadomość..." />
-      <button type="submit" class="send-btn">Wyślij</button>
-    </form>
+    <div id="chat"></div>
+    <div class="inputs">
+      <input type="text" id="msgInput" placeholder="Wpisz wiadomość...">
+      <button class="send-btn" onclick="sendMsg()">Wyślij</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const socket = io();
+    const startScreen = document.getElementById('startScreen');
+    const nickScreen = document.getElementById('nickScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const nickInput = document.getElementById('nickInput');
+    const userNickDisplay = document.getElementById('userNickDisplay');
+    const chat = document.getElementById('chat');
+    const msgInput = document.getElementById('msgInput');
+
+    let myNick = localStorage.getItem('chat_nick') || '';
+
+    function goToNickStep() {
+      startScreen.style.display = 'none';
+      nickScreen.style.display = 'block';
+      if (myNick) nickInput.value = myNick;
+      nickInput.focus();
+    }
+
     function enterChat() {
-      const welcomeScreen = document.getElementById('welcome-screen');
-      const overlay = document.getElementById('transition-overlay');
-
-      welcomeScreen.style.opacity = '0';
-      welcomeScreen.style.transform = 'scale(1.1)';
-
-      setTimeout(() => {
-        welcomeScreen.style.display = 'none';
-        overlay.style.opacity = '1';
-      }, 400);
-
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        document.body.classList.add('chat-active');
-      }, 900);
-    }
-
-    let cryptoKey = null;
-
-    if (!window.location.hash) {
-      window.location.hash = 'room-' + Math.random().toString(36).substring(2, 11);
-    }
-    const secretRoomKey = window.location.hash.replace('#', '');
-
-    async function initCrypto() {
-      const enc = new TextEncoder();
-      const keyMaterial = await window.crypto.subtle.importKey(
-        "raw",
-        enc.encode(secretRoomKey),
-        { name: "PBKDF2" },
-        false,
-        ["deriveBits", "deriveKey"]
-      );
-
-      cryptoKey = await window.crypto.subtle.deriveKey(
-        {
-          "name": "PBKDF2",
-          salt: enc.encode("czat-5a-static-salt"),
-          "iterations": 100000,
-          "hash": "SHA-256"
-        },
-        keyMaterial,
-        { "name": "AES-GCM", "length": 256 },
-        true,
-        ["encrypt", "decrypt"]
-      );
-    }
-
-    async function encryptText(text) {
-      const enc = new TextEncoder();
-      const iv = window.crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
-        cryptoKey,
-        enc.encode(text)
-      );
+      const val = nickInput.value.trim();
+      if (!val) return alert('Wpisz pierwszą literę imienia!');
       
-      return {
-        cipher: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-        iv: btoa(String.fromCharCode(...iv))
-      };
+      myNick = val;
+      localStorage.setItem('chat_nick', myNick);
+      userNickDisplay.textContent = myNick;
+
+      nickScreen.style.display = 'none';
+      chatScreen.style.display = 'flex';
+      msgInput.focus();
     }
 
-    async function decryptText(encryptedData) {
+    // Generator / Pobieranie klucza z URL (#)
+    async function getKey() {
+      if (!window.location.hash) {
+        const key = await window.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+        const exported = await window.crypto.subtle.exportKey("jwk", key);
+        window.location.hash = exported.k;
+      }
+      const k = window.location.hash.substring(1);
+      return await window.crypto.subtle.importKey("jwk", { kty: "oct", k: k, alg: "A256GCM", ext: true }, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+    }
+
+    // Szyfrowanie
+    async function encrypt(text) {
+      const key = await getKey();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(text);
+      const ciphertext = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+      return { iv: Array.from(iv), data: Array.from(new Uint8Array(ciphertext)) };
+    }
+
+    // Odszyfrowywanie
+    async function decrypt(packet) {
       try {
-        const dec = new TextDecoder();
-        const cipher = Uint8Array.from(atob(encryptedData.cipher), c => c.charCodeAt(0));
-        const iv = Uint8Array.from(atob(encryptedData.iv), c => c.charCodeAt(0));
-        
-        const decrypted = await window.crypto.subtle.decrypt(
-          { name: "AES-GCM", iv: iv },
-          cryptoKey,
-          cipher
-        );
-        return dec.decode(decrypted);
+        const key = await getKey();
+        const iv = new Uint8Array(packet.iv);
+        const data = new Uint8Array(packet.data);
+        const decrypted = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+        return new TextDecoder().decode(decrypted);
       } catch (e) {
-        return "⚠️ Błąd odszyfrowania wiadomości";
+        return "[Błąd odszyfrowania]";
       }
     }
 
-    const socket = io();
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
+    // Wysyłanie wiadomości
+    async function sendMsg() {
+      const text = msgInput.value.trim();
+      if (!text) return;
 
-    initCrypto().then(() => {
-      window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretRoomKey)).then(hash => {
-        const roomIdHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-        socket.emit('join-room', roomIdHash);
+      const payload = JSON.stringify({ nick: myNick, text: text });
+      const encryptedPayload = await encrypt(payload);
+      
+      socket.emit('message', encryptedPayload);
+      msgInput.value = '';
+    }
 
-        socket.on('load-history', async (history) => {
-          messages.innerHTML = '';
-          for (let msg of history) {
-            const decrypted = await decryptText(msg.encrypted);
-            addMessage(decrypted, false);
-          }
-        });
+    // Odbieranie wiadomości
+    socket.on('message', async (packet) => {
+      const rawText = await decrypt(packet);
+      const div = document.createElement('div');
+      div.className = 'msg';
 
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          if (input.value.trim() && cryptoKey) {
-            const text = input.value;
-            addMessage(text, true);
-            const encryptedData = await encryptText(text);
-            socket.emit('chat-message', { room: roomIdHash, encrypted: encryptedData });
-            input.value = '';
-          }
-        });
+      try {
+        const parsed = JSON.parse(rawText);
+        div.innerHTML = `<span class="nick">[${parsed.nick}]</span> ${parsed.text}`;
+      } catch {
+        div.textContent = rawText;
+      }
 
-        socket.on('chat-message', async (data) => {
-          const decrypted = await decryptText(data.encrypted);
-          addMessage(decrypted, false);
-        });
-      });
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
     });
 
-    function addMessage(text, isMine) {
-      const item = document.createElement('div');
-      item.classList.add('msg');
-      if (isMine) item.classList.add('my-msg');
-      item.textContent = text;
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
-    }
+    // Enter przechodzi dalej / wysyła
+    nickInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') enterChat(); });
+    msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
   </script>
 </body>
 </html>
