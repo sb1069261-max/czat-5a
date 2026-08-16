@@ -3,20 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prywatny Czat E2EE</title>
+  <title>Czat 5a</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; }
-    #chat { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; height: 90vh; }
-    #messages { flex: 1; overflow-y: auto; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 8px; display: flex; flex-direction: column; }
-    .msg { margin: 5px 0; padding: 8px 12px; border-radius: 5px; background: #222; max-width: 80%; word-break: break-word; }
-    .my-msg { background: #007bff; align-self: flex-end; }
-    form { display: flex; gap: 10px; }
-    input { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #333; background: #222; color: #fff; }
-    button { padding: 10px 20px; border: none; background: #28a745; color: #fff; border-radius: 5px; font-weight: bold; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 15px;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0f0f10 url('https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?auto=format&fit=crop&w=1000&q=80') center/cover no-repeat fixed;
+      color: #fff;
+    }
+    #chat-container {
+      width: 100%;
+      max-width: 450px;
+      height: 92vh;
+      background: rgba(18, 18, 20, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .header {
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 2px;
+      background: linear-gradient(45deg, #ff007f, #00d2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 5px;
+      margin-bottom: 10px;
+    }
+    #messages::-webkit-scrollbar {
+      width: 5px;
+    }
+    #messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 15px;
+      font-size: 15px;
+      line-height: 1.4;
+      word-break: break-word;
+      background: rgba(255, 255, 255, 0.1);
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .my-msg {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      align-self: flex-end;
+      border-bottom-left-radius: 15px;
+      border-bottom-right-radius: 2px;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+    }
+    input {
+      flex: 1;
+      padding: 12px 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus {
+      border-color: #007bff;
+    }
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #28a745, #218838);
+      color: #fff;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div id="chat">
+  <div id="chat-container">
+    <div class="header">
+      <h1>CZAT 5A</h1>
+    </div>
     <div id="messages"></div>
     <form id="form">
       <input id="input" autocomplete="off" placeholder="Napisz wiadomość..." />
