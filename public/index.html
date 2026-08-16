@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Czat 5a</title>
+  
+  <!-- USTAWIENIA APLIKACJI MOBILNEJ (PWA) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Czat 5A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0f0f10">
+
   <style>
     * {
       box-sizing: border-box;
@@ -230,7 +238,6 @@
       }, 900);
     }
 
-    // SILNIK SZYFROWANIA E2EE (WEB CRYPTO API)
     let cryptoKey = null;
 
     if (!window.location.hash) {
@@ -294,15 +301,12 @@
       }
     }
 
-    // SOCKET.IO & LOGIKA CZATU
     const socket = io();
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
     initCrypto().then(() => {
-      // Łączymy z pokojem po zainicjowaniu szyfrowania
-      // Do serwera wysyłamy tylko skrót SHA-256, by nie znał nawet nazwy pokoju
       window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretRoomKey)).then(hash => {
         const roomIdHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         socket.emit('join-room', roomIdHash);
