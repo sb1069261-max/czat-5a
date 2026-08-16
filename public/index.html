@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prywatny Czat</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f0f12; color: #e1e1e6; margin: 0; padding: 15px; display: flex; flex-direction: column; height: 92vh; }
+    .header { text-align: center; border-bottom: 1px solid #29292e; padding-bottom: 10px; margin-bottom: 10px; }
+    .badge-5a { background: #8257e5; color: white; font-weight: bold; font-size: 1.5rem; padding: 4px 12px; border-radius: 8px; display: inline-block; margin-bottom: 5px; }
+    .security-note { font-size: 0.75rem; color: #00e676; margin-top: 4px; }
+    #messages { flex: 1; overflow-y: auto; list-style-type: none; padding: 0; margin: 0 0 10px 0; }
+    #messages li { background: #1e1e24; margin-bottom: 8px; padding: 10px 14px; border-radius: 10px; max-width: 85%; word-break: break-word; }
+    form { display: flex; gap: 8px; }
+    input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #29292e; background: #1e1e24; color: white; font-size: 1rem; }
+    button { padding: 14px 20px; border-radius: 10px; border: none; background: #8257e5; color: white; font-weight: bold; font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="badge-5a">5a</div>
+    <div>Prywatny Czat Szyfrowany</div>
+    <div class="security-note">🔒 Szyfrowanie End-to-End (E2EE) aktywne</div>
+  </div>
+
+  <ul id="messages"></ul>
+
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Napisz wiadomość..." />
+    <button>Wyślij</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    if (!window.location.hash || window.location.hash.length < 10) {
+      const randomRoom = Math.random().toString(36).substring(2, 10);
+      const randomKey = Math.random().toString(36).substring(2, 15);
+      window.location.hash = `${randomRoom}-${randomKey}`;
+    }
+
+    const hashParams = window.location.hash.substring(1).split('-');
+    const roomId = hashParams[0];
+    const secretKey = hashParams[1];
+
+    socket.emit('join-room', roomId);
+
+    function encrypt(text, key) {
+      let result = '';
+      for (let i = 0; i < text.length; i++) {
+        result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return btoa(unescape(encodeURIComponent(result)));
+    }
+
+    function decrypt(encodedText, key) {
+      try {
+        const text = decodeURIComponent(escape(atob(encodedText)));
+        let result = '';
+        for (let i = 0; i < text.length; i++) {
+          result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+        return result;
+      } catch (e) {
+        return "[Błąd odszyfrowania - zły klucz]";
+      }
+    }
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value.trim()) {
+        const encrypted = encrypt(input.value, secretKey);
+        socket.emit('encrypted-message', { roomId, payload: encrypted });
+        input.value = '';
+      }
+    });
+
+    socket.on('encrypted-message', (payload) => {
+      const decryptedText = decrypt(payload, secretKey);
+      const item = document.createElement('li');
+      item.textContent = decryptedText;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+    });
+  </script>
+</body>
+</html>
