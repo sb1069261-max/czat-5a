@@ -1,18 +1,20 @@
 const express = require('express');
 const app = express();
-const http = require('http').Server(app);
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const path = require('path');
 
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
+  // Dołączanie do konkretnego pokoju
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
   });
 
-  socket.on('encrypted-message', (data) => {
-    // Serwer tylko przekazuje zaszyfrowaną wiadomość do osób w tym samym pokoju
-    io.to(data.roomId).emit('encrypted-message', data.payload);
+  // Przekazywanie wiadomości do WSZYSTKICH INNYCH w tym samym pokoju
+  socket.on('chat-message', (data) => {
+    socket.to(data.room).emit('chat-message', data);
   });
 });
 
