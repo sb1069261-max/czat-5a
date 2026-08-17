@@ -11,24 +11,25 @@ app.use(express.static('public'));
 let chatHistory = [];
 
 io.on('connection', (socket) => {
-  // Każdy użytkownik trafia automatycznie do pokoju 'main-chat'
-  socket.join('main-chat');
+  // Wszyscy od razu lądują w jednym, stałym pokoju 'main-chat'
+  const room = 'main-chat';
+  socket.join(room);
 
-  // Wysyłamy historię wiadomości
+  // Wysyłamy nowej osobie całą historię czatu
   socket.emit('history', chatHistory);
 
-  // Obsługa dołączania do pokoju (dla kompatybilności)
-  socket.on('join-room', (room) => {
-    socket.join('main-chat');
+  // Jeśli klient próbuje dołączyć do pokoju, wrzucamy go do głównego
+  socket.on('join-room', () => {
+    socket.join(room);
   });
 
-  // Obsługa wiadomości
+  // Odbieranie i rozsyłanie wiadomości do wszystkich
   socket.on('message', (data) => {
     chatHistory.push(data);
     if (chatHistory.length > 100) {
       chatHistory.shift();
     }
-    io.to('main-chat').emit('message', data);
+    io.to(room).emit('message', data);
   });
 });
 
