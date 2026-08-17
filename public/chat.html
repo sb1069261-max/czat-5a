@@ -41,7 +41,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Widok logowania / profilu (wpisywanie imienia) */
         #profileView {
             display: flex;
             flex-direction: column;
@@ -157,11 +156,11 @@
 </head>
 <body>
     <div id="app">
-        <!-- 1. WIDOK PROFILU (Wpisywanie imienia i generowanie literki) -->
+        <!-- 1. WIDOK PROFILU -->
         <div id="profileView">
             <div class="profile-avatar-preview" id="previewLetter">?</div>
             <h2>Wpisz swoje imię</h2>
-            <input type="text" id="nameInput" class="profile-input" placeholder="np. Paweł" oninput="updatePreview(this.value)">
+            <input type="text" id="nameInput" class="profile-input" placeholder="np. Paweł lub H" oninput="updatePreview(this.value)">
             <button onclick="saveProfile()">Wejdź na czat</button>
         </div>
 
@@ -198,7 +197,6 @@
         const socket = io();
         let myName = localStorage.getItem('chat_username') || '';
 
-        // Sprawdzenie, czy imię było już wcześniej zapisane w telefonie
         window.onload = () => {
             if (myName) {
                 document.getElementById('profileView').style.display = 'none';
@@ -207,13 +205,11 @@
             }
         };
 
-        // Podgląd pierwszej litery podczas wpisywania imienia
         function updatePreview(val) {
             const firstLetter = val.trim().charAt(0).toUpperCase() || '?';
             document.getElementById('previewLetter').textContent = firstLetter;
         }
 
-        // Zapisanie imienia
         function saveProfile() {
             const input = document.getElementById('nameInput');
             const val = input.value.trim();
@@ -251,40 +247,12 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // Renderowanie wiadomości (z uwzględnieniem autora i pierwszej litery)
-        function renderMessages(history) {
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            
-            history.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = 'message';
-                if (msg.author === myName) {
-                    div.classList.add('my');
-                }
-
-                const authorDiv = document.createElement('div');
-                authorDiv.className = 'author';
-                authorDiv.textContent = msg.author || 'Nieznany';
-                
-                const textDiv = document.createElement('div');
-                textDiv.textContent = msg.text;
-
-                div.appendChild(authorDiv);
-                div.appendChild(textDiv);
-                container.appendChild(div);
-            });
-            scrollToBottom();
-        }
-
-        socket.on('history', (history) => {
-            renderMessages(history);
-        });
-
-        socket.on('message', (msg) => {
+        function appendMessage(msg) {
             const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message';
+            
+            // Sprawdzamy czy autor wiadomości to Ty
             if (msg.author === myName) {
                 div.classList.add('my');
             }
@@ -300,12 +268,28 @@
             div.appendChild(textDiv);
             container.appendChild(div);
             scrollToBottom();
+        }
+
+        socket.on('history', (history) => {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            history.forEach(msg => {
+                appendMessage(msg);
+            });
+        });
+
+        socket.on('message', (msg) => {
+            appendMessage(msg);
         });
 
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (text) {
+                // Zabezpieczenie przed wysłaniem pustego imienia
+                if (!myName) {
+                    myName = localStorage.getItem('chat_username') || 'Anonim';
+                }
                 socket.emit('message', { 
                     text: text, 
                     author: myName 
