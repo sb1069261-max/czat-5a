@@ -8,31 +8,26 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// Przechowujemy historię ostatnich wiadomości w pamięci serwera
 let chatHistory = [];
 
 io.on('connection', (socket) => {
-  // Każdy użytkownik automatycznie trafia do stałego pokoju 'main-chat'
+  // Każdy użytkownik trafia automatycznie do pokoju 'main-chat'
   socket.join('main-chat');
 
-  // Wysyłamy nowemu użytkownikowi dotychczasową historię czatu
+  // Wysyłamy historię wiadomości
   socket.emit('history', chatHistory);
 
+  // Obsługa dołączania do pokoju (dla kompatybilności)
+  socket.on('join-room', (room) => {
+    socket.join('main-chat');
+  });
+
+  // Obsługa wiadomości
   socket.on('message', (data) => {
-    // Dodajemy wiadomość do historii
     chatHistory.push(data);
-    
-    // Ograniczamy historię do ostatnich 100 wiadomości, żeby nie zająć całej pamięci
     if (chatHistory.length > 100) {
       chatHistory.shift();
     }
-
-    // Przesyłamy wiadomość do wszystkich w pokoju 'main-chat'
-  
-  socket.on('join-room', (room) => {
-    // Ignorujemy stare hashe z linków i zawsze trzymamy każdego w 'main-chat'
-    socket.join('main-chat');
-  });
     io.to('main-chat').emit('message', data);
   });
 });
