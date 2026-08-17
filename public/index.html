@@ -1,118 +1,90 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Czat 5A</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body,html{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background-color:#0b0e14;color:#fff;}
-#intro-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at center,#1a1c29 0%,#0b0e14 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:100;padding:20px;}
-.intro-card{background:rgba(18,20,32,0.7);border:1px solid rgba(138,43,226,0.2);border-radius:24px;padding:30px 20px;display:flex;flex-direction:column;align-items:center;max-width:320px;width:100%;box-shadow:0 15px 35px rgba(0,0,0,0.6);}
-.avatar-img{width:140px;height:140px;object-fit:contain;margin-bottom:20px;filter:drop-shadow(0 0 15px rgba(138,43,226,0.4));}
-.intro-card h1{font-size:1.4rem;color:#fff;margin-bottom:8px;font-weight:700;}
-.intro-card p{font-size:0.85rem;color:#94a3b8;margin-bottom:24px;font-style:italic;text-align:center;}
-.torty-btn{width:100%;padding:14px;font-size:1rem;background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);color:white;border:none;border-radius:14px;cursor:pointer;font-weight:bold;box-shadow:0 6px 20px rgba(168,85,247,0.4);display:flex;justify-content:center;align-items:center;gap:8px;}
-#chat-screen{display:none;width:100%;height:100%;flex-direction:column;background-color:#0b0e14;}
-.chat-top-header{padding:14px 16px;background-color:#121420;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);}
-.chat-title-container h2{font-size:1rem;font-weight:600;color:#fff;}
-.encryption-badge{font-size:0.65rem;color:#10b981;display:flex;align-items:center;gap:4px;margin-top:2px;}
-#chat-messages{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
-.message{background:#1a1c29;padding:10px 14px;border-radius:12px;max-width:80%;word-break:break-word;font-size:0.95rem;border:1px solid rgba(255,255,255,0.03);}
-.message.mine{background:#7c3aed;align-self:flex-end;color:#fff;}
-#chat-form{display:flex;padding:10px 12px;background-color:#121420;border-top:1px solid rgba(255,255,255,0.05);gap:8px;align-items:center;}
-#chat-input{flex:1;padding:12px 14px;font-size:0.95rem;border-radius:12px;border:none;background-color:#1a1c29;color:white;outline:none;}
-#chat-send{background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);color:white;border:none;padding:12px 20px;border-radius:12px;font-weight:bold;font-size:0.95rem;cursor:pointer;}
-.bottom-nav{height:60px;background-color:#121420;display:flex;justify-content:space-around;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-bottom:env(safe-area-inset-bottom);}
-.nav-item{display:flex;flex-direction:column;align-items:center;color:#64748b;font-size:0.7rem;gap:4px;text-decoration:none;}
-.nav-item.active{color:#a855f7;}
-.nav-item svg{width:22px;height:22px;fill:currentColor;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prywatny Czat</title>
+    <style>
+        body {
+            background-color: #0f0f12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .profile-card {
+            background: #18181d;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid #2a2a33;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, #8a2be2, #ff00ff);
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        h1 { 
+            color: white; 
+            font-size: 24px;
+            margin: 15px 0 5px 0; 
+        }
+
+        .subtitle { 
+            color: #888899; 
+            font-style: italic; 
+            font-size: 14px;
+            margin-bottom: 30px; 
+        }
+
+        .action-btn {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(138, 43, 226, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.97);
+        }
+    </style>
 </head>
 <body>
-<div id="intro-screen">
-  <div class="intro-card">
-    <svg class="avatar-img" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#a855f7" stop-opacity="0.6"/>
-          <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <circle cx="100" cy="100" r="80" fill="url(#glow)"/>
-      <path d="M100 35 C75 35 60 55 60 75 C60 90 70 105 75 115 C65 125 45 140 40 165 C70 175 130 175 160 165 C155 140 135 125 125 115 C130 105 140 90 140 75 C140 55 125 35 100 35 Z" fill="#1e2235"/>
-      <path d="M100 25 C65 25 45 50 45 80 C45 95 55 115 65 125 C75 135 85 140 100 140 C115 140 125 135 135 125 C145 115 155 95 155 80 C155 50 135 25 100 25 Z" fill="#121420" stroke="#7c3aed" stroke-width="2"/>
-      <ellipse cx="85" cy="82" rx="7" ry="4" fill="#a855f7" filter="drop-shadow(0 0 6px #fff)"/>
-      <ellipse cx="115" cy="82" rx="7" ry="4" fill="#a855f7" filter="drop-shadow(0 0 6px #fff)"/>
-    </svg>
-    <h1>Prywatny Czat</h1>
-    <p>„każdy chuj ma swój strój.”</p>
-    <button class="torty-btn" id="intro-btn">🍰 TYLKO TORTY</button>
-  </div>
-</div>
 
-<div id="chat-screen">
-  <div class="chat-top-header">
-    <div class="chat-title-container">
-      <h2>Czat 5A</h2>
-      <div class="encryption-badge">🔒 SZYFROWANIE E2EE AKTYWNE</div>
+    <div class="profile-card">
+        <div class="avatar-container">
+            <img src="IMG_7918.jpeg" alt="Profil" class="avatar">
+        </div>
+        <h1>Prywatny Czat</h1>
+        <p class="subtitle">„każdy chuj ma swój strój.”</p>
+        <button class="action-btn" onclick="location.href='chat.html'">
+            😈 RUCHAJ MNIE W RYJ HAH
+        </button>
     </div>
-  </div>
-  <div id="chat-messages"></div>
-  <form id="chat-form">
-    <input type="text" id="chat-input" placeholder="Napisz wiadomość..." autocomplete="off">
-    <button type="submit" id="chat-send">Wyślij</button>
-  </form>
-  <div class="bottom-nav">
-    <a href="#" class="nav-item active"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg><span>Czaty</span></a>
-    <a href="#" class="nav-item"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span>Kontakty</span></a>
-    <a href="#" class="nav-item"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Ustawienia</span></a>
-  </div>
-</div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket=io();
-const introScreen=document.getElementById('intro-screen');
-const chatScreen=document.getElementById('chat-screen');
-const introBtn=document.getElementById('intro-btn');
-const chatForm=document.getElementById('chat-form');
-const chatInput=document.getElementById('chat-input');
-const chatMessages=document.getElementById('chat-messages');
-let userLetter='';
-introBtn.addEventListener('click',()=>{
-  let val=prompt('Wpisz pierwszą literę swojego imienia:');
-  if(!val||!val.trim()){alert('Musisz coś wpisać!');return;}
-  userLetter=val.trim().toUpperCase();
-  introScreen.style.opacity='0';
-  setTimeout(()=>{introScreen.style.display='none';chatScreen.style.display='flex';chatInput.focus();},300);
-  socket.emit('join-room','main-chat');
-});
-chatForm.addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const text=chatInput.value.trim();
-  if(!text)return;
-  socket.emit('message',{sender:userLetter,text:text});
-  chatInput.value='';
-});
-socket.on('history',(history)=>{chatMessages.innerHTML='';history.forEach(appendMessage);});
-socket.on('message',(data)=>{appendMessage(data);});
-function appendMessage(data){
-  const div=document.createElement('div');
-  div.classList.add('message');
-  if(data.sender===userLetter){div.classList.add('mine');}
-  div.innerHTML=`<strong>[${data.sender}]</strong>: ${data.text}`;
-  chatMessages.appendChild(div);
-  chatMessages.scrollTop=chatMessages.scrollHeight;
-}
-</script>
-    <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js');
-      });
-    }
-  </script>
 
 </body>
 </html>
