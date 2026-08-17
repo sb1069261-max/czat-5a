@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Czat 5A</title>
+    <style>
+        body {
+            background-color: #0d0d11;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .header-icon {
+            font-size: 18px;
+            cursor: pointer;
+            background: #18181d;
+            border: 1px solid #2a2a33;
+            padding: 8px;
+            border-radius: 12px;
+            color: #ccc;
+        }
+
+        .search-container {
+            padding: 0 20px 15px 20px;
+        }
+
+        .search-box {
+            background: #18181d;
+            border: 1px solid #2a2a33;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            color: #777788;
+            font-size: 14px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            width: 100%;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 18px;
+            padding: 0 20px 15px 20px;
+            border-bottom: 1px solid #1a1a22;
+            font-size: 14px;
+            color: #777788;
+        }
+
+        .tab {
+            cursor: pointer;
+            padding-bottom: 4px;
+        }
+
+        .tab.active {
+            color: #a855f7;
+            border-bottom: 2px solid #a855f7;
+            font-weight: 600;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 20px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #16161c;
+            cursor: pointer;
+        }
+
+        .chat-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #8a2be2, #ff00ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+        }
+
+        .chat-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+        }
+
+        .chat-info p {
+            margin: 0;
+            font-size: 12px;
+            color: #00ffaa;
+        }
+
+        .chat-right {
+            text-align: right;
+            font-size: 12px;
+            color: #777788;
+        }
+
+        .badge {
+            background: #a855f7;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            margin-top: 6px;
+            margin-left: auto;
+        }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            background: #131318;
+            border-top: 1px solid #22222a;
+            padding: 12px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #777788;
+            font-size: 11px;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .nav-item.active {
+            color: #a855f7;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="width: 34px;"></div>
+        <span>Czat 5A</span>
+        <div class="header-icon">✏️</div>
+    </div>
+
+    <div class="search-container">
+        <div class="search-box">
+            🔍 <input type="text" placeholder="Szukaj">
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active">Wszystkie</div>
+        <div class="tab">Prywatne</div>
+        <div class="tab">Grupy</div>
+        <div class="tab">Archiwum</div>
+    </div>
+
+    <div class="chat-list">
+        <div class="chat-item">
+            <div class="chat-left">
+                <div class="chat-avatar">C5</div>
+                <div class="chat-info">
+                    <h3>Czat 5A</h3>
+                    <p>🔒 SZYFROWANIE E2EE AKTYWNE</p>
+                </div>
+            </div>
+            <div class="chat-right">
+                <span>22:26</span>
+                <div class="badge">1</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            💬
+            <span>Czaty</span>
+        </div>
+        <div class="nav-item">
+            👥
+            <span>Kontakty</span>
+        </div>
+        <div class="nav-item">
+            ⚙️
+            <span>Ustawienia</span>
+        </div>
+    </div>
+
+</body>
+</html>
