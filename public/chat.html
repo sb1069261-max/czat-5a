@@ -41,7 +41,31 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        #listView { display: flex; flex-direction: column; height: 100%; }
+        /* Widok logowania / profilu (wpisywanie imienia) */
+        #profileView {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .profile-avatar-preview {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #8a2be2, #ff00ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        #listView { display: none; flex-direction: column; height: 100%; }
         #chatRoomView { display: none; flex-direction: column; height: 100%; }
 
         .chat-item {
@@ -53,11 +77,16 @@
         }
 
         .chat-avatar {
-            width: 50px; height: 50px;
+            width: 50px; 
+            height: 50px;
             background: linear-gradient(135deg, #8a2be2, #ff00ff);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            margin-right: 15px; font-weight: bold;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            margin-right: 15px; 
+            font-weight: bold;
+            font-size: 20px;
         }
 
         .messages-container {
@@ -75,6 +104,13 @@
             font-size: 15px;
             word-break: break-word;
         }
+
+        .message .author {
+            font-size: 11px;
+            color: #b0b0b0;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
         
         .message.my { background: #8a2be2; align-self: flex-end; }
 
@@ -88,7 +124,6 @@
         }
 
         input {
-            flex: 1;
             background: #18181d;
             border: 1px solid #2a2a33;
             border-radius: 20px;
@@ -96,6 +131,17 @@
             color: white;
             font-size: 16px;
             outline: none;
+        }
+
+        .profile-input {
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chat-input {
+            flex: 1;
         }
 
         button {
@@ -111,23 +157,37 @@
 </head>
 <body>
     <div id="app">
-        <!-- LISTA CZATÓW -->
+        <!-- 1. WIDOK PROFILU (Wpisywanie imienia i generowanie literki) -->
+        <div id="profileView">
+            <div class="profile-avatar-preview" id="previewLetter">?</div>
+            <h2>Wpisz swoje imię</h2>
+            <input type="text" id="nameInput" class="profile-input" placeholder="np. Paweł" oninput="updatePreview(this.value)">
+            <button onclick="saveProfile()">Wejdź na czat</button>
+        </div>
+
+        <!-- 2. LISTA CZATÓW -->
         <div id="listView">
             <div class="header"><span>Czat 5A</span></div>
             <div class="scrollable">
                 <div class="chat-item" onclick="openChat()">
-                    <div class="chat-avatar">C5</div>
-                    <div><strong>Czat 5A</strong><div style="font-size:12px; color:#00ffaa;">SZYFROWANE E2EE</div></div>
+                    <div class="chat-avatar" id="listAvatar">?</div>
+                    <div>
+                        <strong id="listUsername">Czat 5A</strong>
+                        <div style="font-size:12px; color:#00ffaa;">SZYFROWANE E2EE</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ROZMOWA -->
+        <!-- 3. ROZMOWA -->
         <div id="chatRoomView">
-            <div class="header"><span onclick="closeChat()" style="cursor:pointer;">← Powrót do czatów</span></div>
+            <div class="header">
+                <span onclick="closeChat()" style="cursor:pointer;">← Powrót</span>
+                <span style="font-size: 14px; color: #b0b0b0;" id="roomTitle">Czat 5A</span>
+            </div>
             <div class="scrollable messages-container" id="messages"></div>
             <div class="chat-input-area">
-                <input type="text" id="messageInput" placeholder="Napisz wiadomość...">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Napisz wiadomość...">
                 <button onclick="sendMessage()">Wyślij</button>
             </div>
         </div>
@@ -136,6 +196,44 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        let myName = localStorage.getItem('chat_username') || '';
+
+        // Sprawdzenie, czy imię było już wcześniej zapisane w telefonie
+        window.onload = () => {
+            if (myName) {
+                document.getElementById('profileView').style.display = 'none';
+                document.getElementById('listView').style.display = 'flex';
+                setupUserInterface();
+            }
+        };
+
+        // Podgląd pierwszej litery podczas wpisywania imienia
+        function updatePreview(val) {
+            const firstLetter = val.trim().charAt(0).toUpperCase() || '?';
+            document.getElementById('previewLetter').textContent = firstLetter;
+        }
+
+        // Zapisanie imienia
+        function saveProfile() {
+            const input = document.getElementById('nameInput');
+            const val = input.value.trim();
+            if (!val) {
+                alert('Wpisz imię!');
+                return;
+            }
+            myName = val;
+            localStorage.setItem('chat_username', myName);
+            
+            document.getElementById('profileView').style.display = 'none';
+            document.getElementById('listView').style.display = 'flex';
+            setupUserInterface();
+        }
+
+        function setupUserInterface() {
+            const firstLetter = myName.charAt(0).toUpperCase();
+            document.getElementById('listAvatar').textContent = firstLetter;
+            document.getElementById('listUsername').textContent = myName;
+        }
 
         function openChat() { 
             document.getElementById('listView').style.display = 'none'; 
@@ -153,25 +251,53 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // Pełne odświeżenie listy wiadomości (używane przy starcie i automatycznym usuwaniu)
-        socket.on('history', (history) => {
+        // Renderowanie wiadomości (z uwzględnieniem autora i pierwszej litery)
+        function renderMessages(history) {
             const container = document.getElementById('messages');
             container.innerHTML = '';
+            
             history.forEach(msg => {
                 const div = document.createElement('div');
                 div.className = 'message';
-                div.textContent = typeof msg === 'object' ? msg.text : msg;
+                if (msg.author === myName) {
+                    div.classList.add('my');
+                }
+
+                const authorDiv = document.createElement('div');
+                authorDiv.className = 'author';
+                authorDiv.textContent = msg.author || 'Nieznany';
+                
+                const textDiv = document.createElement('div');
+                textDiv.textContent = msg.text;
+
+                div.appendChild(authorDiv);
+                div.appendChild(textDiv);
                 container.appendChild(div);
             });
             scrollToBottom();
+        }
+
+        socket.on('history', (history) => {
+            renderMessages(history);
         });
 
-        // Odbieranie pojedynczej, nowej wiadomości na żywo
         socket.on('message', (msg) => {
             const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message';
-            div.textContent = typeof msg === 'object' ? msg.text : msg;
+            if (msg.author === myName) {
+                div.classList.add('my');
+            }
+
+            const authorDiv = document.createElement('div');
+            authorDiv.className = 'author';
+            authorDiv.textContent = msg.author || 'Nieznany';
+            
+            const textDiv = document.createElement('div');
+            textDiv.textContent = msg.text;
+
+            div.appendChild(authorDiv);
+            div.appendChild(textDiv);
             container.appendChild(div);
             scrollToBottom();
         });
@@ -180,7 +306,10 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (text) {
-                socket.emit('message', { text: text });
+                socket.emit('message', { 
+                    text: text, 
+                    author: myName 
+                });
                 input.value = '';
             }
         }
