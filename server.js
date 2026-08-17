@@ -1,3 +1,18 @@
+const webpush = require('web-push');
+
+// Generowanie lub wpisanie kluczy VAPID (na start testowe)
+const vapidKeys = {
+  publicKey: 'TWOJ_PUBLIC_KEY',
+  privateKey: 'TWOJ_PRIVATE_KEY'
+};
+
+webpush.setVapidDetails(
+  'mailto:twoj@email.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
+
+let pushSubscriptions = []; // Tutaj będziemy trzymać subskrypcje urządzeń
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -23,14 +38,22 @@ io.on('connection', (socket) => {
     socket.join(room);
   });
 
-  // Odbieranie i rozsyłanie wiadomości do wszystkich
-  socket.on('message', (data) => {
+ socket.on('message', (data) => {
     chatHistory.push(data);
     if (chatHistory.length > 100) {
-      chatHistory.shift();
+        chatHistory.shift();
     }
     io.to(room).emit('message', data);
-  });
+
+    const payload = JSON.stringify({
+        title: `Nowa wiadomość od: ${data.sender || 'Ktoś'}`,
+        body: data.text || 'Otrzymałeś nową wiadomość!'
+    });
+
+    pushSubscriptions.forEach(sub => {
+        webpush.sendNotification(sub, payload).catch(err => console.error(err));
+    });
+});
 });
 
 const PORT = process.env.PORT || 3000;
