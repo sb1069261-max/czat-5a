@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prywatny Czat</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #101418; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .profile-card { background-color: #1a1e24; border-radius: 40px; padding: 40px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .avatar-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 30px auto; }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid #1a1e24; }
+        .avatar-wrapper::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; background: linear-gradient(135deg, #8a2be2, #4b0082); z-index: -1; filter: blur(8px); opacity: 0.8; }
+        h1 { color: #ffffff; font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+        .subtitle { color: #8b949e; font-size: 16px; font-style: italic; margin-bottom: 35px; }
+        .action-button { background: linear-gradient(90deg, #8a2be2, #9b30ff); color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4); }
+    </style>
+</head>
+<body>
+    <div class="profile-card">
+        <div class="avatar-wrapper">
+            <img src="IMG_7918.jpeg" alt="Awatar" class="avatar">
+        </div>
+        <h1>Prywatny Czat</h1>
+        <p class="subtitle">„każdy chuj ma swój strój.”</p>
+        <button class="action-button">😈 RUCHAJ MNIE W RYJ HAH</button>
+    </div>
+</body>
+</html>
