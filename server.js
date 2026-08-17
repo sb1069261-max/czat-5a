@@ -1,16 +1,3 @@
-const webpush = require('web-push');
-
-// Generowanie lub wpisanie kluczy VAPID (na start testowe)
-const vapidKeys = {
-  publicKey: 'TWOJ_PUBLIC_KEY',
-  privateKey: 'TWOJ_PRIVATE_KEY'
-};
-
-webpush.setVapidDetails(
-  'mailto:twoj@email.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
 
 let pushSubscriptions = []; // Tutaj będziemy trzymać subskrypcje urządzeń
 const express = require('express');
