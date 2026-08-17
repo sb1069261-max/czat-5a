@@ -8,27 +8,36 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// Wspólna historia wiadomości dla wszystkich
+// Przechowujemy historię ostatnich wiadomości w pamięci serwera
 let chatHistory = [];
 
 io.on('connection', (socket) => {
-  // Każdy kto wchodzi, automatycznie dołącza do 'main-chat'
+  // Każdy użytkownik automatycznie trafia do stałego pokoju 'main-chat'
   socket.join('main-chat');
 
-  // Wysyłamy nowemu użytkownikowi całą historię
+  // Wysyłamy nowemu użytkownikowi dotychczasową historię czatu
   socket.emit('history', chatHistory);
 
   socket.on('message', (data) => {
-    // Dodajemy do historii
+    // Dodajemy wiadomość do historii
     chatHistory.push(data);
     
-    // Utrzymujemy tylko ostatnią godzinę (np. max 100 wiadomości lub usuwanie po czasie)
-    if (chatHistory.length > 100) chatHistory.shift();
+    // Ograniczamy historię do ostatnich 100 wiadomości, żeby nie zająć całej pamięci
+    if (chatHistory.length > 100) {
+      chatHistory.shift();
+    }
 
-    // Rozsyłamy do wszystkich
+    // Przesyłamy wiadomość do wszystkich w pokoju 'main-chat'
+  
+  socket.on('join-room', (room) => {
+    // Ignorujemy stare hashe z linków i zawsze trzymamy każdego w 'main-chat'
+    socket.join('main-chat');
+  });
     io.to('main-chat').emit('message', data);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Serwer działa na porcie ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Serwer działa na porcie ${PORT}`);
+});
