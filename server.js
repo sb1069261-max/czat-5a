@@ -55,6 +55,12 @@ io.on('connection', (socket) => {
     });
 });
 });
+// Endpoint do rejestrowania subskrypcji push
+app.post('/subscribe', express.json(), (req, res) => {
+    const subscription = req.body;
+    pushSubscriptions.push(subscription);
+    res.status(201).json({ message: 'Subskrypcja dodana pomyślnie!' });
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
