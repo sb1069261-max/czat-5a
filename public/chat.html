@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Czat 5A</title>
     <style>
-        /* Naprawa przewijania i responsywności */
         html, body {
             margin: 0;
             padding: 0;
@@ -15,7 +14,7 @@
             background-color: #0d0d11;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            position: fixed; /* Zapobiega "odbijaniu" strony przy scrollowaniu */
+            position: fixed;
         }
 
         #app {
@@ -36,11 +35,10 @@
             flex-shrink: 0;
         }
 
-        /* Naprawione przewijanie jednym palcem */
         .scrollable {
             flex: 1;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Kluczowe dla płynnego scrolla na iOS */
+            -webkit-overflow-scrolling: touch;
         }
 
         #listView { display: flex; flex-direction: column; height: 100%; }
@@ -75,6 +73,7 @@
             border-radius: 12px;
             max-width: 80%;
             font-size: 15px;
+            word-break: break-word;
         }
         
         .message.my { background: #8a2be2; align-self: flex-end; }
@@ -95,7 +94,7 @@
             border-radius: 20px;
             padding: 12px 16px;
             color: white;
-            font-size: 16px; /* 16px zapobiega zoomowaniu na iOS przy klikaniu */
+            font-size: 16px;
             outline: none;
         }
 
@@ -106,6 +105,7 @@
             padding: 0 20px;
             border-radius: 20px;
             font-weight: bold;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -117,17 +117,15 @@
             <div class="scrollable">
                 <div class="chat-item" onclick="openChat()">
                     <div class="chat-avatar">C5</div>
-                    <div><strong>Czat 5A</strong><div style="font-size:12px; color:#00ffaa;">SZYFROWANE</div></div>
+                    <div><strong>Czat 5A</strong><div style="font-size:12px; color:#00ffaa;">SZYFROWANE E2EE</div></div>
                 </div>
             </div>
         </div>
 
         <!-- ROZMOWA -->
         <div id="chatRoomView">
-            <div class="header"><span onclick="closeChat()">← Powrót</span></div>
-            <div class="scrollable messages-container" id="messages">
-                <div class="message">Witaj w Czat 5A!</div>
-            </div>
+            <div class="header"><span onclick="closeChat()" style="cursor:pointer;">← Powrót do czatów</span></div>
+            <div class="scrollable messages-container" id="messages"></div>
             <div class="chat-input-area">
                 <input type="text" id="messageInput" placeholder="Napisz wiadomość...">
                 <button onclick="sendMessage()">Wyślij</button>
@@ -138,26 +136,59 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        function openChat() { document.getElementById('listView').style.display = 'none'; document.getElementById('chatRoomView').style.display = 'flex'; }
-        function closeChat() { document.getElementById('chatRoomView').style.display = 'none'; document.getElementById('listView').style.display = 'flex'; }
-        
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            if (input.value.trim()) {
-                socket.emit('chat message', input.value);
-                const msg = document.createElement('div');
-                msg.className = 'message my';
-                msg.textContent = input.value;
-                document.getElementById('messages').appendChild(msg);
-                input.value = '';
-                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-            }
+
+        function openChat() { 
+            document.getElementById('listView').style.display = 'none'; 
+            document.getElementById('chatRoomView').style.display = 'flex';
+            scrollToBottom();
         }
-        socket.on('chat message', (msg) => {
+
+        function closeChat() { 
+            document.getElementById('chatRoomView').style.display = 'none'; 
+            document.getElementById('listView').style.display = 'flex'; 
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Pełne odświeżenie listy wiadomości (używane przy starcie i automatycznym usuwaniu)
+        socket.on('history', (history) => {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            history.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.textContent = typeof msg === 'object' ? msg.text : msg;
+                container.appendChild(div);
+            });
+            scrollToBottom();
+        });
+
+        // Odbieranie pojedynczej, nowej wiadomości na żywo
+        socket.on('message', (msg) => {
+            const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message';
-            div.textContent = msg;
-            document.getElementById('messages').appendChild(div);
+            div.textContent = typeof msg === 'object' ? msg.text : msg;
+            container.appendChild(div);
+            scrollToBottom();
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (text) {
+                socket.emit('message', { text: text });
+                input.value = '';
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
         });
     </script>
 </body>
