@@ -183,11 +183,11 @@
 </head>
 <body>
     <div id="app">
-        <!-- 1. WIDOK WYBORU NICKU (Przy pierwszym wejściu) -->
+        <!-- 1. WIDOK WYBORU NICKU -->
         <div id="profileView">
             <div class="profile-avatar-preview" id="previewLetter">?</div>
             <h2>Wpisz swój nick</h2>
-            <input type="text" id="nameInput" class="profile-input" placeholder="np. H lub M" oninput="updatePreview(this.value)">
+            <input type="text" id="nameInput" class="profile-input" placeholder="np. H" oninput="updatePreview(this.value)">
             <button onclick="saveProfile()">Wejdź na czat</button>
         </div>
 
@@ -196,9 +196,9 @@
             <div class="header"><span>Czat 5A</span></div>
             <div class="scrollable">
                 <div class="chat-item" onclick="openChat()">
-                    <div class="chat-avatar" id="listAvatar">?</div>
+                    <div class="chat-avatar" id="listAvatar">T</div>
                     <div>
-                        <strong id="listUsername">Czat 5A</strong>
+                        <strong>Torty</strong>
                         <div style="font-size:12px; color:#00ffaa;">SZYFROWANE E2EE</div>
                     </div>
                 </div>
@@ -210,7 +210,6 @@
             <div class="header">
                 <span onclick="closeChat()" style="cursor:pointer; font-size: 14px;">← Powrót</span>
                 
-                <!-- Środek: Ikonka profilu + nazwa -->
                 <div class="header-center">
                     <div class="mini-avatar" id="roomMiniAvatar">?</div>
                     <span id="roomMyName" style="font-weight: bold; color: #fff;">-</span>
@@ -239,7 +238,7 @@
         let myName = localStorage.getItem('chat_username') || '';
 
         window.onload = () => {
-            if (myName && myName.trim() !== '') {
+            if (myName && myName.trim() !== '' && myName !== 'Użytkownik' && myName !== 'Anonim') {
                 document.getElementById('profileView').style.display = 'none';
                 document.getElementById('listView').style.display = 'flex';
                 setupUserInterface();
@@ -271,9 +270,6 @@
 
         function setupUserInterface() {
             const firstLetter = myName.charAt(0).toUpperCase();
-            document.getElementById('listAvatar').textContent = firstLetter;
-            document.getElementById('listUsername').textContent = myName;
-            
             document.getElementById('roomMiniAvatar').textContent = firstLetter;
             document.getElementById('roomMyName').textContent = myName;
         }
@@ -300,10 +296,10 @@
             div.className = 'message';
             
             let authorName = msg.author;
-            if (!authorName || authorName === 'Anonim' || authorName === 'Kolega') {
-                if (msg.userId === myId) {
-                    authorName = myName;
-                }
+            if (msg.userId === myId) {
+                authorName = myName;
+            } else if (!authorName || authorName === 'Użytkownik' || authorName === 'Anonim') {
+                authorName = 'Kolega';
             }
 
             const isMyMessage = (msg.userId && msg.userId === myId) || (authorName === myName);
@@ -314,7 +310,7 @@
 
             const authorDiv = document.createElement('div');
             authorDiv.className = 'author';
-            authorDiv.textContent = authorName || 'Użytkownik';
+            authorDiv.textContent = authorName;
             
             const textDiv = document.createElement('div');
             textDiv.textContent = msg.text || msg;
@@ -341,8 +337,9 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             
-            if (!myName) {
-                myName = localStorage.getItem('chat_username') || 'Użytkownik';
+            myName = localStorage.getItem('chat_username') || document.getElementById('roomMyName').textContent;
+            if (!myName || myName === '-') {
+                myName = 'H';
             }
 
             if (text) {
