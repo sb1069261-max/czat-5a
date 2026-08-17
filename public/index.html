@@ -3,214 +3,234 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Czat 5A - Food Theme</title>
+  <title>Tylko Tort - Czat</title>
   <style>
-    :root {
-      --bg-color: #121212;
-      --surface-color: #1e1e1e;
-      --primary-color: #ff6600;
-      --text-color: #e0e0e0;
-      --text-secondary: #888;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #fff;
+    }
+
+    /* Ekran powitalny (Intro z Burgerem i Tortem) */
+    #intro-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1000&q=80') no-repeat center center/cover;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-    header {
-      background-color: var(--surface-color);
-      padding: 15px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.2rem;
-      border-bottom: 1px solid #333;
-      display: flex;
-      align-items: center;
       justify-content: center;
-      gap: 10px;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
+      text-align: center;
     }
-    #chat {
+
+    #intro-screen h2 {
+      font-size: 1rem;
+      color: #ffcc00;
+      margin-bottom: 15px;
+      font-style: italic;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    #intro-screen h1 {
+      font-size: 2.5rem;
+      color: #ff5722;
+      margin-bottom: 25px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+    }
+
+    #intro-screen input {
+      padding: 12px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 15px;
+      width: 80%;
+      max-width: 250px;
+      text-align: center;
+    }
+
+    #intro-screen button {
+      padding: 12px 25px;
+      font-size: 1.1rem;
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    /* Główny ekran czatu */
+    #chat-screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      background-color: #181818;
+    }
+
+    #chat-header {
+      padding: 15px;
+      background-color: #222;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #ff5722;
+      border-bottom: 1px solid #333;
+    }
+
+    #chat-messages {
       flex: 1;
       overflow-y: auto;
       padding: 15px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      -webkit-overflow-scrolling: touch;
     }
+
     .message {
-      background-color: var(--surface-color);
-      padding: 12px 15px;
-      border-radius: 12px;
+      background: #2a2a2a;
+      padding: 10px 14px;
+      border-radius: 10px;
       max-width: 85%;
       word-break: break-word;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      animation: fadeIn 0.3s ease;
+      font-size: 1rem;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    .message.mine {
+      background: #ff5722;
+      align-self: flex-end;
     }
-    .message .author {
-      font-size: 0.75rem;
-      color: var(--primary-color);
-      margin-bottom: 4px;
-      font-weight: bold;
-    }
-    #form {
+
+    #chat-form {
       display: flex;
       padding: 10px;
-      background-color: var(--surface-color);
+      background-color: #222;
       border-top: 1px solid #333;
-      gap: 10px;
     }
-    #input {
+
+    #chat-input {
       flex: 1;
       padding: 12px;
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      color: #fff;
-      border-radius: 8px;
       font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      background-color: #333;
+      color: white;
       outline: none;
     }
-    #input:focus {
-      border-color: var(--primary-color);
-    }
-    button {
-      padding: 0 20px;
-      background-color: var(--primary-color);
-      border: none;
+
+    #chat-send {
+      background-color: #ff5722;
       color: white;
+      border: none;
+      padding: 0 20px;
+      margin-left: 8px;
       border-radius: 8px;
       font-weight: bold;
-      cursor: pointer;
       font-size: 1rem;
-    }
-    button:active {
-      transform: scale(0.96);
     }
   </style>
 </head>
 <body>
 
-  <header>
-    🍔 Czat 5A (Główny Kanał)
-  </header>
+  <!-- Ekran powitalny -->
+  <div id="intro-screen">
+    <h2>„każdy chuj ma swój strój”</h2>
+    <h1>Tylko Tort</h1>
+    <input type="text" id="user-initial" placeholder="Wpisz 1. literę imienia" maxlength="3">
+    <button id="enter-btn">Wejdź do czatu</button>
+  </div>
 
-  <div id="chat"></div>
-
-  <form id="form" onsubmit="sendMessage(event)">
-    <input id="input" autocomplete="off" placeholder="Napisz smacznego... (" />
-    <button>Wyślij</button>
-  </form>
+  <!-- Ekran czatu -->
+  <div id="chat-screen">
+    <div id="chat-header">Tylko Tort - Główny Kanał</div>
+    <div id="chat-messages"></div>
+    <form id="chat-form">
+      <input type="text" id="chat-input" placeholder="Napisz wiadomość..." autocomplete="off">
+      <button type="submit" id="chat-send">Wyślij</button>
+    </form>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let socket = io();
-    let cryptoKey = null;
+    const socket = io();
 
-    // Stałe hasło szyfrujące E2EE dla całego czatu
-    const STATIC_PASSWORD = "Czat5aTajneHaslo!";
+    const introScreen = document.getElementById('intro-screen');
+    const chatScreen = document.getElementById('chat-screen');
+    const enterBtn = document.getElementById('enter-btn');
+    const userInitialInput = document.getElementById('user-initial');
+    
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
 
-    async function initCrypto() {
-      const enc = new TextEncoder();
-      const keyMaterial = await crypto.subtle.importKey(
-        "raw", 
-        enc.encode(STATIC_PASSWORD), 
-        "PBKDF2", 
-        false, 
-        ["deriveKey"]
-      );
-      
-      cryptoKey = await crypto.subtle.deriveKey(
-        { 
-          name: "PBKDF2", 
-          salt: enc.encode("fixed-food-salt-2026"), 
-          iterations: 100000, 
-          hash: "SHA-256" 
-        },
-        keyMaterial,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-      );
+    let userLetter = '';
 
-      // Automatyczne dołączenie do głównego pokoju na serwerze
-      socket.emit('join-room', 'main-chat');
-    }
-
-    initCrypto();
-
-    // Odbieranie historii wiadomości po połączeniu
-    socket.on('history', (history) => {
-      history.forEach(packet => processMessage(packet));
-    });
-
-    // Odbieranie nowych wiadomości w czasie rzeczywistym
-    socket.on('message', (packet) => {
-      processMessage(packet);
-    });
-
-    async function processMessage(packet) {
-      if (!cryptoKey) return;
-      try {
-        const decrypted = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv: new Uint8Array(packet.iv) },
-          cryptoKey,
-          new Uint8Array(packet.data)
-        );
-        const parsed = JSON.parse(new TextDecoder().decode(decrypted));
-        displayMessage(parsed.author, parsed.text);
-      } catch (e) {
-        // Ignorujemy wiadomości zaszyfrowane innym kluczem (niepowiązane)
+    enterBtn.addEventListener('click', () => {
+      const val = userInitialInput.value.trim();
+      if (!val) {
+        alert('Wpisz chociaż jedną literę!');
+        return;
       }
-    }
+      userLetter = val.toUpperCase();
+      
+      // Ukrywamy intro, pokazujemy czat
+      introScreen.style.display = 'none';
+      chatScreen.style.display = 'flex';
 
-    async function sendMessage(e) {
+      // Automatyczne łączenie do wspólnego pokoju na serwerze
+      socket.emit('join-room', 'main-chat');
+    });
+
+    chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const input = document.getElementById('input');
-      const text = input.value.trim();
-      if (!text || !cryptoKey) return;
+      const text = chatInput.value.trim();
+      if (!text) return;
 
-      input.value = '';
+      const messageData = {
+        sender: userLetter,
+        text: text
+      };
 
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const payload = JSON.stringify({ author: 'Ty', text: text });
-      const encoded = new TextEncoder().encode(payload);
+      socket.emit('message', messageData);
+      chatInput.value = '';
+    });
 
-      const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
-        cryptoKey,
-        encoded
-      );
+    // Odbieranie historii i wiadomości
+    socket.on('history', (history) => {
+      chatMessages.innerHTML = '';
+      history.forEach(appendMessage);
+    });
 
-      socket.emit('message', {
-        iv: Array.from(iv),
-        data: Array.from(new Uint8Array(encrypted))
-      });
-    }
+    socket.on('message', (data) => {
+      appendMessage(data);
+    });
 
-    function displayMessage(author, text) {
-      const chat = document.getElementById('chat');
+    function appendMessage(data) {
       const div = document.createElement('div');
-      div.className = 'message';
-      
-      div.innerHTML = `
-        <div class="author">${author}</div>
-        <div>${escapeHtml(text)}</div>
-      `;
-      
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      div.classList.add('message');
+      if (data.sender === userLetter) {
+        div.classList.add('mine');
+      }
+      div.innerHTML = `<strong>[${data.sender}]</strong>: ${data.text}`;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
   </script>
 </body>
