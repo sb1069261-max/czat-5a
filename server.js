@@ -8,25 +8,27 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-io.on('connection', (socket) => {
-  // Klient dołącza do konkretnego pokoju (np. na podstawie hasha lub ogólnego pokoju)
-  socket.on('join-room', (room) => {
-    socket.join(room);
-  });
+// Wspólna historia wiadomości dla wszystkich
+let chatHistory = [];
 
-  // Odbieranie i rozsyłanie wiadomości zero-knowledge (serwer widzi tylko zaszyfrowane paczki)
+io.on('connection', (socket) => {
+  // Każdy kto wchodzi, automatycznie dołącza do 'main-chat'
+  socket.join('main-chat');
+
+  // Wysyłamy nowemu użytkownikowi całą historię
+  socket.emit('history', chatHistory);
+
   socket.on('message', (data) => {
-    // Jeśli używasz pokoi, rozsyłaj do pokoju, w przeciwnym razie broadcast do wszystkich
-    if (data.room) {
-      io.to(data.room).emit('message', data);
-    } else {
-      io.broadcast.emit('message', data); // Wysyłamy do innych
-      socket.emit('message', data);       // Oraz z powrotem do nadawcy, żeby pojawiła się na ekranie!
-    }
+    // Dodajemy do historii
+    chatHistory.push(data);
+    
+    // Utrzymujemy tylko ostatnią godzinę (np. max 100 wiadomości lub usuwanie po czasie)
+    if (chatHistory.length > 100) chatHistory.shift();
+
+    // Rozsyłamy do wszystkich
+    io.to('main-chat').emit('message', data);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Serwer działa na porcie ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Serwer działa na porcie ${PORT}`));
