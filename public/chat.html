@@ -102,6 +102,7 @@
             max-width: 80%;
             font-size: 15px;
             word-break: break-word;
+            align-self: flex-start; /* Obce wiadomości po lewej */
         }
 
         .message .author {
@@ -111,8 +112,14 @@
             font-weight: bold;
         }
         
-        .message.my { background: #8a2be2; align-self: flex-end; }
-        .message.my .author { color: #ffffff; }
+        /* Twoje wiadomości po prawej w fioletowym kolorze */
+        .message.my { 
+            background: #8a2be2; 
+            align-self: flex-end; 
+        }
+        .message.my .author { 
+            color: #ffffff; 
+        }
 
         .chat-input-area {
             display: flex;
@@ -160,8 +167,8 @@
         <!-- 1. WIDOK PROFILU -->
         <div id="profileView">
             <div class="profile-avatar-preview" id="previewLetter">?</div>
-            <h2>Wpisz swoje imię</h2>
-            <input type="text" id="nameInput" class="profile-input" placeholder="np. Paweł lub H" oninput="updatePreview(this.value)">
+            <h2>Wpisz swoje imię / nick</h2>
+            <input type="text" id="nameInput" class="profile-input" placeholder="np. H lub M" oninput="updatePreview(this.value)">
             <button onclick="saveProfile()">Wejdź na czat</button>
         </div>
 
@@ -197,7 +204,13 @@
     <script>
         const socket = io();
         
-        // Zawsze pobieramy imię z pamięci telefonu
+        // Tworzymy unikalne ID dla tego konkretnego telefonu, jeśli jeszcze go nie ma
+        let myId = localStorage.getItem('chat_userid');
+        if (!myId) {
+            myId = 'user_' + Math.random().toString(36.substring(2, 9));
+            localStorage.setItem('chat_userid', myId);
+        }
+
         let myName = localStorage.getItem('chat_username') || '';
 
         window.onload = () => {
@@ -217,7 +230,7 @@
             const input = document.getElementById('nameInput');
             const val = input.value.trim();
             if (!val) {
-                alert('Wpisz imię!');
+                alert('Wpisz nick!');
                 return;
             }
             myName = val;
@@ -255,19 +268,19 @@
             const div = document.createElement('div');
             div.className = 'message';
             
-            // Wyciągamy autora (jeśli brak w bazie, bierzemy aktualne imię lub Anonim)
-            const authorName = msg.author || myName || 'Anonim';
+            // Rozpoznajemy czy to Twoja wiadomość po unikalnym ID urządzenia lub po imieniu
+            const isMyMessage = (msg.userId && msg.userId === myId) || (msg.author === myName);
 
-            if (authorName === myName) {
+            if (isMyMessage) {
                 div.classList.add('my');
             }
 
             const authorDiv = document.createElement('div');
             authorDiv.className = 'author';
-            authorDiv.textContent = authorName;
+            authorDiv.textContent = msg.author || 'Anonim';
             
             const textDiv = document.createElement('div');
-            textDiv.textContent = msg.text || msg; // Obsługa starych wiadomości tekstowych
+            textDiv.textContent = msg.text || msg;
 
             div.appendChild(authorDiv);
             div.appendChild(textDiv);
@@ -291,7 +304,6 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             
-            // Upewniamy się, że mamy imię przed wysłaniem
             if (!myName) {
                 myName = localStorage.getItem('chat_username') || 'Anonim';
             }
@@ -299,7 +311,8 @@
             if (text) {
                 socket.emit('message', { 
                     text: text, 
-                    author: myName 
+                    author: myName,
+                    userId: myId // Wysyłamy unikalny ID telefonu, żeby serwer wiedział kto pisał
                 });
                 input.value = '';
             }
