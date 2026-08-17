@@ -238,7 +238,7 @@
         let myName = localStorage.getItem('chat_username') || '';
 
         window.onload = () => {
-            if (myName && myName.trim() !== '' && myName !== 'Użytkownik' && myName !== 'Anonim') {
+            if (myName && myName.trim() !== '' && myName !== 'Użytkownik' && myName !== 'Anonim' && myName !== 'Kolega') {
                 document.getElementById('profileView').style.display = 'none';
                 document.getElementById('listView').style.display = 'flex';
                 setupUserInterface();
@@ -295,17 +295,15 @@
             const div = document.createElement('div');
             div.className = 'message';
             
+            // Sprawdzamy czy to Twoja wiadomość (po ID urządzenia lub zapisanym nicku)
+            const isMyMessage = (msg.userId && msg.userId === myId) || (msg.author === myName);
+
             let authorName = msg.author;
-            if (msg.userId === myId) {
+            if (isMyMessage) {
                 authorName = myName;
+                div.classList.add('my');
             } else if (!authorName || authorName === 'Użytkownik' || authorName === 'Anonim') {
                 authorName = 'Kolega';
-            }
-
-            const isMyMessage = (msg.userId && msg.userId === myId) || (authorName === myName);
-
-            if (isMyMessage) {
-                div.classList.add('my');
             }
 
             const authorDiv = document.createElement('div');
