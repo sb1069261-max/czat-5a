@@ -28,6 +28,8 @@ io.on('connection', (socket) => {
     socket.on('message', (data) => {
         const messageWithTime = {
             text: data.text,
+            author: data.author || 'Kolega', // Zapisuje Twój nick lub domyślny
+            userId: data.userId || null,     // Zapisuje unikalne ID urządzenia
             timestamp: Date.now()
         };
 
@@ -66,6 +68,7 @@ app.post('/subscribe', (req, res) => {
     res.status(201).json({ message: 'Subskrypcja zapisana' });
 });
 
+// Uruchomienie serwera
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
