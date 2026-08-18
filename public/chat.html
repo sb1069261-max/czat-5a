@@ -15,6 +15,8 @@
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             position: fixed;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         #app {
@@ -111,10 +113,11 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .message {
+            position: relative;
             background: #18181d;
             padding: 10px 14px;
             border-radius: 12px;
@@ -122,6 +125,8 @@
             font-size: 15px;
             word-break: break-word;
             align-self: flex-start;
+            cursor: pointer;
+            touch-action: manipulation;
         }
 
         .message .author {
@@ -137,6 +142,64 @@
         }
         .message.my .author { 
             color: #ffffff; 
+        }
+
+        /* WIDOK REAKCJI POD WIADOMOŚCIĄ */
+        .reactions-container {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .reaction-pill {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 2px 7px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .message.my .reaction-pill {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        /* MENU WYBORU EMOTIKON (MESSENGER STYLE) */
+        .emoji-picker-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .emoji-picker-bar {
+            background: #1e1e26;
+            border: 1px solid #3a3a48;
+            border-radius: 30px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            animation: popUp 0.15s ease-out;
+        }
+
+        .emoji-picker-bar span {
+            font-size: 26px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .emoji-picker-bar span:active {
+            transform: scale(1.4);
+        }
+
+        @keyframes popUp {
+            from { transform: scale(0.6); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .chat-input-area {
@@ -157,6 +220,8 @@
             color: white;
             font-size: 16px;
             outline: none;
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         .profile-input {
@@ -202,14 +267,6 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
-        }
-
-        audio {
-            width: 100%;
-            min-width: 180px;
-            height: 40px;
-            margin-top: 5px;
-            filter: invert(100%) hue-rotate(180deg);
         }
     </style>
 </head>
@@ -258,9 +315,22 @@
         </div>
     </div>
 
+    <!-- MODAL WYBORU REAKCJI -->
+    <div id="emojiPickerModal" class="emoji-picker-modal" onclick="closeEmojiPicker()">
+        <div class="emoji-picker-bar" onclick="event.stopPropagation()">
+            <span onclick="sendReaction('❤️')">❤️</span>
+            <span onclick="sendReaction('😂')">😂</span>
+            <span onclick="sendReaction('😮')">😮</span>
+            <span onclick="sendReaction('😢')">😢</span>
+            <span onclick="sendReaction('👍')">👍</span>
+            <span onclick="sendReaction('🔥')">🔥</span>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+        let selectedMessageId = null;
         
         let myId = localStorage.getItem('chat_userid');
         if (!myId) {
@@ -323,10 +393,37 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        function renderReactions(msgDiv, reactions) {
+            let reactionsDiv = msgDiv.querySelector('.reactions-container');
+            if (!reactionsDiv) {
+                reactionsDiv = document.createElement('div');
+                reactionsDiv.className = 'reactions-container';
+                msgDiv.appendChild(reactionsDiv);
+            }
+
+            reactionsDiv.innerHTML = '';
+            if (!reactions || Object.keys(reactions).length === 0) {
+                reactionsDiv.style.display = 'none';
+                return;
+            }
+
+            reactionsDiv.style.display = 'flex';
+            const counts = {};
+            Object.values(reactions).forEach(e => counts[e] = (counts[e] || 0) + 1);
+
+            for (const [emoji, count] of Object.entries(counts)) {
+                const pill = document.createElement('span');
+                pill.className = 'reaction-pill';
+                pill.textContent = `${emoji} ${count > 1 ? count : ''}`.trim();
+                reactionsDiv.appendChild(pill);
+            }
+        }
+
         function appendMessage(msg) {
             const container = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message';
+            div.dataset.id = msg.id;
             
             const isMyMessage = (msg.userId && msg.userId === myId) || (msg.author === myName);
 
@@ -341,22 +438,97 @@
             const authorDiv = document.createElement('div');
             authorDiv.className = 'author';
             authorDiv.textContent = authorName;
-            
             div.appendChild(authorDiv);
 
+            // Wyświetlanie treści (tekst vs niezawodny przycisk głosówki dla iPhone'a)
             if (msg.type === 'audio' || msg.audioData) {
-                const audio = document.createElement('audio');
-                audio.controls = true;
-                audio.src = msg.audioData;
-                div.appendChild(audio);
+                const audioPlayer = document.createElement('div');
+                audioPlayer.style.display = 'flex';
+                audioPlayer.style.alignItems = 'center';
+                audioPlayer.style.gap = '8px';
+                audioPlayer.style.cursor = 'pointer';
+
+                const playIcon = document.createElement('span');
+                playIcon.textContent = '▶️';
+                playIcon.style.fontSize = '18px';
+
+                const playText = document.createElement('span');
+                playText.textContent = 'Wiadomość głosowa';
+                playText.style.fontWeight = 'bold';
+                playText.style.fontSize = '14px';
+
+                audioPlayer.appendChild(playIcon);
+                audioPlayer.appendChild(playText);
+
+                const audioElement = new Audio(msg.audioData);
+
+                audioPlayer.onclick = (e) => {
+                    e.stopPropagation();
+                    if (audioElement.paused) {
+                        audioElement.play();
+                        playIcon.textContent = '⏸️';
+                        playText.textContent = 'Odtwarzanie...';
+                    } else {
+                        audioElement.pause();
+                        playIcon.textContent = '▶️';
+                        playText.textContent = 'Wiadomość głosowa';
+                    }
+                };
+
+                audioElement.onended = () => {
+                    playIcon.textContent = '▶️';
+                    playText.textContent = 'Wiadomość głosowa';
+                };
+
+                div.appendChild(audioPlayer);
             } else {
                 const textDiv = document.createElement('div');
                 textDiv.textContent = msg.text || (typeof msg === 'string' ? msg : '');
                 div.appendChild(textDiv);
             }
 
+            // Renderowanie reakcji
+            renderReactions(div, msg.reactions);
+
+            // Obsługa przytrzymania wiadomości (Long Press) do otwarcia reakcji
+            let pressTimer;
+            div.addEventListener('touchstart', () => {
+                pressTimer = setTimeout(() => openEmojiPicker(msg.id), 400);
+            }, { passive: true });
+
+            div.addEventListener('touchend', () => clearTimeout(pressTimer));
+            div.addEventListener('touchmove', () => clearTimeout(pressTimer));
+            
+            // Obsługa dla komputera (Prawy klik lub Dwuklik)
+            div.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                openEmojiPicker(msg.id);
+            });
+
             container.appendChild(div);
             scrollToBottom();
+        }
+
+        // OBSŁUGA PASEK REAKCJI
+        function openEmojiPicker(msgId) {
+            selectedMessageId = msgId;
+            document.getElementById('emojiPickerModal').style.display = 'flex';
+        }
+
+        function closeEmojiPicker() {
+            selectedMessageId = null;
+            document.getElementById('emojiPickerModal').style.display = 'none';
+        }
+
+        function sendReaction(emoji) {
+            if (selectedMessageId) {
+                socket.emit('react-message', {
+                    messageId: selectedMessageId,
+                    emoji: emoji,
+                    userId: myId
+                });
+            }
+            closeEmojiPicker();
         }
 
         socket.on('history', (history) => {
@@ -369,6 +541,13 @@
 
         socket.on('message', (msg) => {
             appendMessage(msg);
+        });
+
+        socket.on('message-reaction-updated', ({ messageId, reactions }) => {
+            const msgDiv = document.querySelector(`[data-id="${messageId}"]`);
+            if (msgDiv) {
+                renderReactions(msgDiv, reactions);
+            }
         });
 
         function sendMessage() {
@@ -442,7 +621,7 @@
                     micBtn.classList.add('recording');
                     micBtn.title = "Zakończ nagrywanie";
                 } catch (err) {
-                    alert('Brak dostępu do mikrofonu lub urządzenie nie obsługuje nagrywania!');
+                    alert('Brak dostępu do mikrofonu!');
                 }
             } else {
                 mediaRecorder.stop();
