@@ -120,9 +120,10 @@
             position: relative;
             background: #18181d;
             padding: 10px 14px;
-            border-radius: 12px;
+            border-radius: 16px;
+            width: fit-content;
             max-width: 80%;
-            min-width: 130px;
+            min-width: 140px;
             font-size: 15px;
             word-break: break-word;
             align-self: flex-start;
@@ -138,14 +139,13 @@
         }
         
         .message.my { 
-            background: #8a2be2; 
-            align-self: flex-end; 
+            background: #8a2be2 !important; 
+            align-self: flex-end !important; 
         }
         .message.my .author { 
-            color: #ffffff; 
+            color: #ffffff !important; 
         }
 
-        /* POPRAWIONE STYLE DLA AUDIO, ŻEBY SIĘ NIE ROZJEŻDŻAŁY */
         .audio-player-box {
             display: flex;
             align-items: center;
@@ -155,7 +155,7 @@
         }
 
         .audio-icon {
-            font-size: 20px;
+            font-size: 22px;
             flex-shrink: 0;
         }
 
@@ -347,7 +347,7 @@
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js?v=99"></script>
     <script>
         const socket = io();
         let selectedMessageId = null;
@@ -445,14 +445,16 @@
             div.className = 'message';
             div.dataset.id = msg.id;
             
-            const isMyMessage = (msg.userId && msg.userId === myId) || (msg.author === myName);
+            const isMyMessage = (msg.userId && msg.userId === myId);
 
             let authorName = msg.author;
             if (isMyMessage) {
                 authorName = myName;
                 div.classList.add('my');
-            } else if (!authorName || authorName === 'Użytkownik' || authorName === 'Anonim') {
-                authorName = 'Kolega';
+            } else {
+                if (!authorName || authorName === 'Użytkownik' || authorName === 'Anonim') {
+                    authorName = 'Kolega';
+                }
             }
 
             const authorDiv = document.createElement('div');
