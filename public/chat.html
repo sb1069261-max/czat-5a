@@ -342,15 +342,15 @@
             
             div.appendChild(authorDiv);
 
-            // Obsługa wiadomości tekstowej lub głosowej
-            if (msg.type === 'audio') {
+            // Poprawione wyświetlanie wiadomości (tekst vs audio)
+            if (msg.type === 'audio' || msg.audioData) {
                 const audio = document.createElement('audio');
                 audio.controls = true;
                 audio.src = msg.audioData;
                 div.appendChild(audio);
             } else {
                 const textDiv = document.createElement('div');
-                textDiv.textContent = msg.text || msg;
+                textDiv.textContent = msg.text || (typeof msg === 'string' ? msg : '');
                 div.appendChild(textDiv);
             }
 
@@ -444,7 +444,6 @@
                 micBtn.classList.remove('recording');
                 micBtn.title = "Nagraj głosówkę";
                 
-                // Wyłączenie diody mikrofonu w telefonie
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
         }
