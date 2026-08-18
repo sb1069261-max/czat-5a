@@ -144,7 +144,6 @@
             color: #ffffff; 
         }
 
-        /* WIDOK REAKCJI POD WIADOMOŚCIĄ */
         .reactions-container {
             display: flex;
             gap: 4px;
@@ -153,19 +152,19 @@
         }
 
         .reaction-pill {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 12px;
-            padding: 2px 7px;
-            font-size: 12px;
+            padding: 2px 8px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .message.my .reaction-pill {
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
         }
 
-        /* MENU WYBORU EMOTIKON (MESSENGER STYLE) */
         .emoji-picker-modal {
             display: none;
             position: fixed;
@@ -440,20 +439,21 @@
             authorDiv.textContent = authorName;
             div.appendChild(authorDiv);
 
-            // Wyświetlanie treści (tekst vs niezawodny przycisk głosówki dla iPhone'a)
+            // Obsługa wiadomości głosowej z bezpośrednim odtwarzaczem
             if (msg.type === 'audio' || msg.audioData) {
                 const audioPlayer = document.createElement('div');
                 audioPlayer.style.display = 'flex';
                 audioPlayer.style.alignItems = 'center';
-                audioPlayer.style.gap = '8px';
+                audioPlayer.style.gap = '10px';
                 audioPlayer.style.cursor = 'pointer';
+                audioPlayer.style.padding = '4px 0';
 
                 const playIcon = document.createElement('span');
                 playIcon.textContent = '▶️';
-                playIcon.style.fontSize = '18px';
+                playIcon.style.fontSize = '20px';
 
                 const playText = document.createElement('span');
-                playText.textContent = 'Wiadomość głosowa';
+                playText.textContent = 'Odtwórz głosówkę';
                 playText.style.fontWeight = 'bold';
                 playText.style.fontSize = '14px';
 
@@ -461,23 +461,26 @@
                 audioPlayer.appendChild(playText);
 
                 const audioElement = new Audio(msg.audioData);
-
+                
                 audioPlayer.onclick = (e) => {
                     e.stopPropagation();
                     if (audioElement.paused) {
-                        audioElement.play();
-                        playIcon.textContent = '⏸️';
-                        playText.textContent = 'Odtwarzanie...';
+                        audioElement.play().then(() => {
+                            playIcon.textContent = '⏸️';
+                            playText.textContent = 'Zatrzymaj';
+                        }).catch(err => {
+                            alert('Nie udało się odtworzyć audio na tym urządzeniu.');
+                        });
                     } else {
                         audioElement.pause();
                         playIcon.textContent = '▶️';
-                        playText.textContent = 'Wiadomość głosowa';
+                        playText.textContent = 'Odtwórz głosówkę';
                     }
                 };
 
                 audioElement.onended = () => {
                     playIcon.textContent = '▶️';
-                    playText.textContent = 'Wiadomość głosowa';
+                    playText.textContent = 'Odtwórz głosówkę';
                 };
 
                 div.appendChild(audioPlayer);
@@ -487,10 +490,9 @@
                 div.appendChild(textDiv);
             }
 
-            // Renderowanie reakcji
             renderReactions(div, msg.reactions);
 
-            // Obsługa przytrzymania wiadomości (Long Press) do otwarcia reakcji
+            // Przytrzymanie na telefonie (Long Press)
             let pressTimer;
             div.addEventListener('touchstart', () => {
                 pressTimer = setTimeout(() => openEmojiPicker(msg.id), 400);
@@ -499,7 +501,7 @@
             div.addEventListener('touchend', () => clearTimeout(pressTimer));
             div.addEventListener('touchmove', () => clearTimeout(pressTimer));
             
-            // Obsługa dla komputera (Prawy klik lub Dwuklik)
+            // Prawy przycisk myszy na komputerze
             div.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 openEmojiPicker(msg.id);
@@ -509,7 +511,6 @@
             scrollToBottom();
         }
 
-        // OBSŁUGA PASEK REAKCJI
         function openEmojiPicker(msgId) {
             selectedMessageId = msgId;
             document.getElementById('emojiPickerModal').style.display = 'flex';
@@ -576,7 +577,7 @@
             }
         });
 
-        // OBSŁUGA NAGRYWANIA GŁOSÓWEK
+        // NAGRYWANIE GŁOSÓWEK Z NAPRAWIONYM KODOWANIEM DLA SAFARI/IPHONE
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
@@ -588,19 +589,25 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     
-                    const options = MediaRecorder.isTypeSupported('audio/mp4') 
-                        ? { mimeType: 'audio/mp4' } 
-                        : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? { mimeType: 'audio/webm;codecs=opus' } : {});
+                    // Inteligentny wybór wspieranego formatu (mp4 dla iPhone, webm dla reszty)
+                    let mimeType = 'audio/webm';
+                    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                        mimeType = 'audio/mp4';
+                    } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+                        mimeType = 'audio/aac';
+                    }
 
-                    mediaRecorder = new MediaRecorder(stream, options);
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
                     audioChunks = [];
 
                     mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
                     };
 
                     mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        const audioBlob = new Blob(audioChunks, { type: mimeType });
                         const reader = new FileReader();
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = () => {
@@ -621,7 +628,7 @@
                     micBtn.classList.add('recording');
                     micBtn.title = "Zakończ nagrywanie";
                 } catch (err) {
-                    alert('Brak dostępu do mikrofonu!');
+                    alert('Brak dostępu do mikrofonu lub przeglądarka blokuje nagrywanie!');
                 }
             } else {
                 mediaRecorder.stop();
