@@ -10,7 +10,6 @@ const io = new Server(server);
 app.use(express.static('public'));
 app.use(express.json());
 
-// Pamięć historii i subskrypcji na serwerze
 let chatHistory = [];
 let pushSubscriptions = [];
 const room = 'main-chat';
@@ -18,7 +17,6 @@ const room = 'main-chat';
 io.on('connection', (socket) => {
     socket.join(room);
 
-    // Wysyłamy aktualną historię nowo połączonemu użytkownikowi
     socket.emit('history', chatHistory);
 
     socket.on('join-room', () => {
@@ -27,38 +25,58 @@ io.on('connection', (socket) => {
 
     socket.on('message', (data) => {
         const messageWithTime = {
-            text: data.text,
-            author: data.author || 'Kolega', // Zapisuje Twój nick lub domyślny
-            userId: data.userId || null,     // Zapisuje unikalne ID urządzenia
-            timestamp: Date.now()
+            id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            text: data.text || null,
+            audioData: data.audioData || null,
+            type: data.type || 'text',
+            author: data.author || 'Kolega',
+            userId: data.userId || null,
+            timestamp: Date.now(),
+            reactions: {}
         };
 
         chatHistory.push(messageWithTime);
 
-        // Limit do 100 wiadomości w historii
         if (chatHistory.length > 100) {
             chatHistory.shift();
         }
 
-        // Wysyłamy nową wiadomość do wszystkich
         io.to(room).emit('message', messageWithTime);
 
-        // Automatyczne usuwanie wiadomości po godzinie (3600000 ms)
         setTimeout(() => {
-            chatHistory = chatHistory.filter(m => m.timestamp !== messageWithTime.timestamp);
-            // Wysyłamy odświeżoną historię po usunięciu
+            chatHistory = chatHistory.filter(m => m.id !== messageWithTime.id);
             io.to(room).emit('history', chatHistory);
         }, 3600000);
 
-        // Obsługa powiadomień WebPush
-        const payload = JSON.stringify({
-            title: 'Nowa wiadomość',
-            body: data.text
-        });
+        if (data.text) {
+            const payload = JSON.stringify({
+                title: 'Nowa wiadomość',
+                body: data.text
+            });
 
-        pushSubscriptions.forEach(sub => {
-            webpush.sendNotification(sub, payload).catch(err => console.error(err));
-        });
+            pushSubscriptions.forEach(sub => {
+                webpush.sendNotification(sub, payload).catch(err => console.error(err));
+            });
+        }
+    });
+
+    // KLUCZOWE: Obsługa reakcji na serwerze
+    socket.on('react-message', ({ messageId, emoji, userId }) => {
+        const msg = chatHistory.find(m => m.id === messageId);
+        if (msg) {
+            if (!msg.reactions) msg.reactions = {};
+            
+            if (msg.reactions[userId] === emoji) {
+                delete msg.reactions[userId];
+            } else {
+                msg.reactions[userId] = emoji;
+            }
+
+            io.to(room).emit('message-reaction-updated', {
+                messageId: msg.id,
+                reactions: msg.reactions
+            });
+        }
     });
 });
 
@@ -68,7 +86,6 @@ app.post('/subscribe', (req, res) => {
     res.status(201).json({ message: 'Subskrypcja zapisana' });
 });
 
-// Uruchomienie serwera
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Serwer działa na porcie ${PORT}`);
