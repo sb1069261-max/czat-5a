@@ -146,6 +146,7 @@
             border-top: 1px solid #22222a;
             gap: 10px;
             flex-shrink: 0;
+            align-items: center;
         }
 
         input {
@@ -173,11 +174,40 @@
             background: #8a2be2;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: 20px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
+        }
+
+        .mic-btn {
+            background: #2a2a33;
+            padding: 12px 14px;
+            border-radius: 50%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid #3a3a48;
+        }
+
+        .mic-btn.recording {
+            background: #ff3b30;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        audio {
+            max-width: 200px;
+            height: 36px;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -219,6 +249,7 @@
             </div>
             <div class="scrollable messages-container" id="messages"></div>
             <div class="chat-input-area">
+                <div class="mic-btn" id="micBtn" onclick="toggleRecording()" title="Nagraj głosówkę">🎤</div>
                 <input type="text" id="messageInput" class="chat-input" placeholder="Napisz wiadomość...">
                 <button onclick="sendMessage()">Wyślij</button>
             </div>
@@ -295,7 +326,6 @@
             const div = document.createElement('div');
             div.className = 'message';
             
-            // Sprawdzamy czy to Twoja wiadomość (po ID urządzenia lub zapisanym nicku)
             const isMyMessage = (msg.userId && msg.userId === myId) || (msg.author === myName);
 
             let authorName = msg.author;
@@ -310,11 +340,20 @@
             authorDiv.className = 'author';
             authorDiv.textContent = authorName;
             
-            const textDiv = document.createElement('div');
-            textDiv.textContent = msg.text || msg;
-
             div.appendChild(authorDiv);
-            div.appendChild(textDiv);
+
+            // Obsługa wiadomości tekstowej lub głosowej
+            if (msg.type === 'audio') {
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = msg.audioData;
+                div.appendChild(audio);
+            } else {
+                const textDiv = document.createElement('div');
+                textDiv.textContent = msg.text || msg;
+                div.appendChild(textDiv);
+            }
+
             container.appendChild(div);
             scrollToBottom();
         }
@@ -344,7 +383,8 @@
                 socket.emit('message', { 
                     text: text, 
                     author: myName,
-                    userId: myId 
+                    userId: myId,
+                    type: 'text'
                 });
                 input.value = '';
             }
@@ -355,6 +395,59 @@
                 sendMessage();
             }
         });
+
+        // OBSŁUGA NAGRYWANIA GŁOSÓWEK
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        async function toggleRecording() {
+            const micBtn = document.getElementById('micBtn');
+
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            const base64Audio = reader.result;
+                            myName = localStorage.getItem('chat_username') || 'H';
+                            
+                            socket.emit('message', {
+                                audioData: base64Audio,
+                                author: myName,
+                                userId: myId,
+                                type: 'audio'
+                            });
+                        };
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('recording');
+                    micBtn.title = "Nagraj ponowne / Zakończ";
+                } catch (err) {
+                    alert('Brak dostępu do mikrofonu!');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording');
+                micBtn.title = "Nagraj głosówkę";
+                
+                // Wyłączenie diody mikrofonu w telefonie
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
     </script>
 </body>
 </html>
