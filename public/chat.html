@@ -205,9 +205,11 @@
         }
 
         audio {
-            max-width: 200px;
-            height: 36px;
-            margin-top: 4px;
+            width: 100%;
+            min-width: 180px;
+            height: 40px;
+            margin-top: 5px;
+            filter: invert(100%) hue-rotate(180deg);
         }
     </style>
 </head>
@@ -342,7 +344,6 @@
             
             div.appendChild(authorDiv);
 
-            // Poprawione wyświetlanie wiadomości (tekst vs audio)
             if (msg.type === 'audio' || msg.audioData) {
                 const audio = document.createElement('audio');
                 audio.controls = true;
@@ -407,7 +408,12 @@
             if (!isRecording) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    const options = MediaRecorder.isTypeSupported('audio/mp4') 
+                        ? { mimeType: 'audio/mp4' } 
+                        : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? { mimeType: 'audio/webm;codecs=opus' } : {});
+
+                    mediaRecorder = new MediaRecorder(stream, options);
                     audioChunks = [];
 
                     mediaRecorder.ondataavailable = event => {
@@ -415,7 +421,7 @@
                     };
 
                     mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
                         const reader = new FileReader();
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = () => {
@@ -434,9 +440,9 @@
                     mediaRecorder.start();
                     isRecording = true;
                     micBtn.classList.add('recording');
-                    micBtn.title = "Nagraj ponowne / Zakończ";
+                    micBtn.title = "Zakończ nagrywanie";
                 } catch (err) {
-                    alert('Brak dostępu do mikrofonu!');
+                    alert('Brak dostępu do mikrofonu lub urządzenie nie obsługuje nagrywania!');
                 }
             } else {
                 mediaRecorder.stop();
