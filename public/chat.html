@@ -122,6 +122,7 @@
             padding: 10px 14px;
             border-radius: 12px;
             max-width: 80%;
+            min-width: 130px;
             font-size: 15px;
             word-break: break-word;
             align-self: flex-start;
@@ -132,7 +133,7 @@
         .message .author {
             font-size: 11px;
             color: #00ffaa;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             font-weight: bold;
         }
         
@@ -142,6 +143,26 @@
         }
         .message.my .author { 
             color: #ffffff; 
+        }
+
+        /* POPRAWIONE STYLE DLA AUDIO, ŻEBY SIĘ NIE ROZJEŻDŻAŁY */
+        .audio-player-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+            width: 100%;
+        }
+
+        .audio-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .audio-text {
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
         }
 
         .reactions-container {
@@ -439,23 +460,17 @@
             authorDiv.textContent = authorName;
             div.appendChild(authorDiv);
 
-            // Obsługa wiadomości głosowej z bezpośrednim odtwarzaczem
             if (msg.type === 'audio' || msg.audioData) {
                 const audioPlayer = document.createElement('div');
-                audioPlayer.style.display = 'flex';
-                audioPlayer.style.alignItems = 'center';
-                audioPlayer.style.gap = '10px';
-                audioPlayer.style.cursor = 'pointer';
-                audioPlayer.style.padding = '4px 0';
+                audioPlayer.className = 'audio-player-box';
 
                 const playIcon = document.createElement('span');
+                playIcon.className = 'audio-icon';
                 playIcon.textContent = '▶️';
-                playIcon.style.fontSize = '20px';
 
                 const playText = document.createElement('span');
+                playText.className = 'audio-text';
                 playText.textContent = 'Odtwórz głosówkę';
-                playText.style.fontWeight = 'bold';
-                playText.style.fontSize = '14px';
 
                 audioPlayer.appendChild(playIcon);
                 audioPlayer.appendChild(playText);
@@ -469,7 +484,7 @@
                             playIcon.textContent = '⏸️';
                             playText.textContent = 'Zatrzymaj';
                         }).catch(err => {
-                            alert('Nie udało się odtworzyć audio na tym urządzeniu.');
+                            alert('Brak możliwości odtworzenia audio.');
                         });
                     } else {
                         audioElement.pause();
@@ -492,7 +507,6 @@
 
             renderReactions(div, msg.reactions);
 
-            // Przytrzymanie na telefonie (Long Press)
             let pressTimer;
             div.addEventListener('touchstart', () => {
                 pressTimer = setTimeout(() => openEmojiPicker(msg.id), 400);
@@ -501,7 +515,6 @@
             div.addEventListener('touchend', () => clearTimeout(pressTimer));
             div.addEventListener('touchmove', () => clearTimeout(pressTimer));
             
-            // Prawy przycisk myszy na komputerze
             div.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 openEmojiPicker(msg.id);
@@ -577,7 +590,6 @@
             }
         });
 
-        // NAGRYWANIE GŁOSÓWEK Z NAPRAWIONYM KODOWANIEM DLA SAFARI/IPHONE
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
@@ -589,7 +601,6 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     
-                    // Inteligentny wybór wspieranego formatu (mp4 dla iPhone, webm dla reszty)
                     let mimeType = 'audio/webm';
                     if (MediaRecorder.isTypeSupported('audio/mp4')) {
                         mimeType = 'audio/mp4';
